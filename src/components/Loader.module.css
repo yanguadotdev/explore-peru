@@ -1,0 +1,159 @@
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+  color: var(--ink);
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+}
+
+.center {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+}
+
+.counterRow,
+.tagline {
+  grid-area: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.counter {
+  font-family: var(--num);
+  font-weight: 800;
+  font-size: clamp(64px, 9vw, 112px);
+  line-height: 0.9;
+  font-variant-numeric: tabular-nums;
+  min-width: 3ch;
+  text-align: center;
+}
+
+.label {
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.label :global(.script) {
+  font-size: 22px;
+  margin: 0 4px;
+  vertical-align: -3px;
+  color: var(--cherry);
+}
+
+.tagline {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 0.28em;
+  white-space: nowrap;
+  font-size: clamp(30px, 5.2vw, 68px);
+}
+
+.tagWord {
+  font-family: var(--display);
+  font-weight: 800;
+  visibility: hidden;
+}
+
+.tagScript {
+  font-size: 1.12em;
+  color: var(--cherry);
+  visibility: hidden;
+}
+
+.route {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  top: 64%;
+  width: min(600px, 86vw);
+}
+
+.route svg {
+  width: 100%;
+  overflow: visible;
+}
+
+.routeGhost {
+  fill: none;
+  stroke: rgba(58, 36, 24, 0.14);
+  stroke-width: 2;
+  stroke-dasharray: 2 6;
+  stroke-linecap: round;
+}
+
+.routeLine {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+.node {
+  fill: var(--paper);
+  stroke: var(--ink);
+  stroke-width: 2.4;
+}
+
+.nodeLabel {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  fill: var(--ink-soft);
+}
+
+.bean {
+  fill: var(--cherry);
+}
+
+.beanCrease {
+  fill: none;
+  stroke: var(--paper-3);
+  stroke-width: 1.6;
+}
+
+.fact {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  bottom: clamp(24px, 5vh, 48px);
+  width: min(420px, calc(100vw - 32px));
+  text-align: center;
+}
+
+.fact h2 {
+  margin: 0 0 8px;
+  font-family: var(--wide);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.fact p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
