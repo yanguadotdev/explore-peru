@@ -90,7 +90,6 @@
   padding: 0 20px;
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.18em;
   text-transform: uppercase;
   border-left: 1px solid rgba(58, 36, 24, 0.1);
   transition: background 0.3s;
@@ -98,7 +97,7 @@
 
 .navBtn:hover,
 .navActive {
-  background: rgba(58, 36, 24, 0.06);
+  background: rgba(58, 36, 24, 0.09);
 }
 
 .navDark {
@@ -125,12 +124,46 @@
   background: var(--cherry-dark);
 }
 
+/* ---- slide-up labels (header): on hover the label slides up out of its mask
+   while an identical copy slides in from below; reverses on leave.
+   The two copies are separated by a gap so they never touch mid-slide. */
+.roll {
+  --roll-gap: 0.6em;
+  --roll-h: calc(1em * var(--roll-lines, 1));
+  display: block;
+  height: var(--roll-h);
+  line-height: 1;
+  overflow: hidden;
+}
+
+.rollInner {
+  display: block;
+  transition: transform 0.55s var(--alt-in-out);
+}
+
+.rollFace {
+  display: block;
+  height: var(--roll-h);
+  margin-bottom: var(--roll-gap);
+  white-space: nowrap;
+}
+
+.rollLine {
+  display: block;
+  height: 1em;
+}
+
+.header button:hover .rollInner,
+.header button:focus-visible .rollInner {
+  transform: translateY(calc(-1 * (var(--roll-h) + var(--roll-gap))));
+}
+
 .navStampsLabel {
+  display: flex;
+  flex-direction: column;
   text-align: left;
   font-size: 11px;
   font-weight: 800;
-  line-height: 1.25;
-  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
@@ -321,14 +354,12 @@
   background: rgba(251, 247, 238, 0.85);
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.14em;
   text-transform: uppercase;
   box-shadow: 0 6px 16px -10px rgba(58, 36, 24, 0.4);
 }
 
 .sound :global(.script) {
   font-size: 17px;
-  letter-spacing: 0;
   color: var(--cherry);
   text-transform: none;
 }
@@ -405,7 +436,6 @@
   color: var(--ink);
   font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.16em;
   text-transform: uppercase;
   transition:
     transform 0.4s var(--alt-out),
@@ -469,7 +499,6 @@
   font-family: var(--display);
   font-weight: 800;
   font-size: 15px;
-  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
@@ -522,7 +551,6 @@
   font-family: var(--display);
   font-weight: 900;
   font-size: 16.5px;
-  line-height: 0.95;
   text-transform: uppercase;
   color: var(--ink);
 }
@@ -810,7 +838,6 @@
   text-align: left;
   font-size: 13px;
   font-weight: 700;
-  line-height: 1.25;
   transition:
     background 0.3s,
     border-color 0.3s;
@@ -826,7 +853,6 @@
   font-style: normal;
   font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--ink-soft);
 }
@@ -930,7 +956,6 @@
   gap: 4px;
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-soft);
   transition: transform 0.4s var(--alt-out);

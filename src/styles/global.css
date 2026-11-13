@@ -97,13 +97,23 @@ body,
   text-rendering: optimizeLegibility;
 }
 
-button {
+button,
+a {
   font: inherit;
+  /* house rule for every button / link label */
+  letter-spacing: -0.02em;
+  line-height: 1;
   color: inherit;
   background: none;
   border: 0;
   padding: 0;
   cursor: pointer;
+}
+
+/* em-based tracking must resolve against each inner label's own font size
+   (zero specificity, so a component class can still override it) */
+:where(button, a) :where(*) {
+  letter-spacing: -0.02em;
 }
 
 button:focus-visible,

@@ -37,6 +37,33 @@ export function MapUI() {
 
 // ------------------------------------------------------------------ header
 
+/**
+ * Slide-up label: on hover (of the parent button) the text slides up out of its
+ * mask while an identical copy slides in from below; reverses on leave.
+ * Multi-line labels move as ONE block, so lines never interleave mid-slide.
+ */
+function RollText({ children }: { children: string | string[] }) {
+  const lines = Array.isArray(children) ? children : [children]
+  const face = (
+    <span className={s.rollFace}>
+      {lines.map((l) => (
+        <span key={l} className={s.rollLine}>
+          {l}
+        </span>
+      ))}
+    </span>
+  )
+  return (
+    <span className={s.roll} style={{ ['--roll-lines' as string]: lines.length }} aria-label={lines.join(' ')}>
+      <span className={s.rollInner} aria-hidden="true">
+        {face}
+        {face}
+      </span>
+    </span>
+  )
+}
+
+
 function Header() {
   const collected = useStore((st) => st.collected.length)
   const listOpen = useStore((st) => st.listOpen)
@@ -79,13 +106,13 @@ function Header() {
               store.set({ listOpen: !listOpen })
             }}
           >
-            <span>Paradas</span>
+            <RollText>Paradas</RollText>
             <ListIcon size={16} />
           </button>
           <StopsList />
         </div>
         <button data-i className={`${s.navBtn} ${s.navDark}`} aria-current="page">
-          <span>Mapa 3D</span>
+          <RollText>Mapa 3D</RollText>
           <MapIcon size={16} />
         </button>
         <button
@@ -97,9 +124,7 @@ function Header() {
           }}
         >
           <span className={s.navStampsLabel}>
-            Colecciona
-            <br />
-            los sellos
+            <RollText>{['Colecciona', 'los sellos']}</RollText>
           </span>
           <span className={s.navStampsCount} ref={countRef}>
             {collected}/{MAIN_STOPS.length}
