@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { gsap } from '../lib/ease'
 import { FULLSCREEN_VERT, NOISE } from './shaders/chunks'
 
 /*
@@ -16,6 +17,7 @@ uniform float uAspect;
 uniform float uTexAspect;
 uniform float uTime;
 uniform float uPush;
+uniform float uIntro;
 uniform vec2 uParallax;
 uniform vec2 uFocus;
 uniform vec3 uTint;
@@ -29,7 +31,8 @@ vec2 coverUv(vec2 uv, float zoom, vec2 focus) {
 
 void main() {
   // Ken Burns: slow breathing zoom; the push dives into the focus point
-  float zoom = 1.06 + sin(uTime * .05) * .025 + uPush * uPush * 1.6;
+  // intro grows the photo into place (inside → out): 1.02 → 1.14
+  float zoom = 1.14 + sin(uTime * .05) * .02 - uIntro * .12 + uPush * uPush * 1.6;
   vec2 focus = mix(vec2(.5) + uParallax * .012, uFocus, smoothstep(0., .6, uPush));
   vec2 uv = coverUv(vUv, zoom, focus);
 
@@ -93,6 +96,7 @@ export class PhotoHero {
         uTexAspect: { value: 16 / 9 },
         uTime: { value: 0 },
         uPush: { value: 0 },
+        uIntro: { value: 1 },
         uParallax: { value: new THREE.Vector2() },
         uFocus: { value: new THREE.Vector2(...image.focus) },
         uTint: { value: new THREE.Color('#F2D9B4') },
@@ -131,6 +135,11 @@ export class PhotoHero {
 
   resize(aspect: number) {
     this.mat.uniforms.uAspect.value = aspect
+  }
+
+  /** Reveal zoom: the photo settles from a close-up as the loader burns away. */
+  intro() {
+    return gsap.fromTo(this.mat.uniforms.uIntro, { value: 1 }, { value: 0, duration: 3, ease: 'alt.out' })
   }
 
   update(t: number, dt: number) {

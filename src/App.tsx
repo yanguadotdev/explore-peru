@@ -60,6 +60,7 @@ export default function App() {
   const reveal = () => {
     store.set({ phase: 'hero' })
     hero.current?.intro()
+    exp.current?.heroIntro()
   }
 
   const start = (withSound: boolean) => {

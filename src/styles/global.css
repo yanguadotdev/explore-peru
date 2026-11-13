@@ -61,6 +61,8 @@
   --cherry: #c8412b;
   --cherry-dark: #a33320;
   --gold: #e2a43a;
+  /* hero route line + start button */
+  --accent: #f2b63f;
   --leaf: #2f5a33;
 
   --display: 'Centra No2', system-ui, sans-serif;

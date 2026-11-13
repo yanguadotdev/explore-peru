@@ -7,25 +7,49 @@
   visibility: hidden;
 }
 
-.brand {
+/* back copy, route line and front letters zoom together (inside → out) */
+.scene {
   position: absolute;
-  top: clamp(20px, 4vh, 36px);
+  inset: 0;
+  transform-origin: 50% 46%;
+  will-change: transform;
+}
+
+.stage {
+  position: absolute;
   left: 0;
   right: 0;
-  margin: 0 auto;
-  width: fit-content;
+  top: 50%;
+  translate: 0 -54%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* front layer: same layout, only the chosen title letters are visible (over the line) */
+.stageFront,
+.stageFront * {
+  visibility: hidden;
+}
+
+.stageFront .letterFront {
+  visibility: visible;
+}
+
+.brand {
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-bottom: clamp(6px, 1.4vh, 14px);
   color: var(--paper-3);
-  text-shadow: 0 1px 12px rgba(58, 36, 24, 0.25);
+  filter: drop-shadow(0 1px 10px rgba(58, 36, 24, 0.35));
 }
 
 .brandName {
   font-family: var(--display);
   font-weight: 800;
-  letter-spacing: 0.18em;
-  font-size: 15px;
+  letter-spacing: 0.16em;
+  font-size: clamp(13px, 1.1vw, 17px);
 }
 
 .brandSep {
@@ -37,116 +61,82 @@
 
 .brandSub {
   font-family: var(--script);
-  font-size: 20px;
+  font-size: clamp(17px, 1.4vw, 22px);
 }
 
-.profile {
-  position: absolute;
-  left: 0;
-  top: 32%;
-  width: 100%;
-  height: 26vh;
-  overflow: visible;
-}
-
-.profile path {
-  fill: none;
-  stroke: var(--cherry);
-  stroke-width: 2.5;
-  vector-effect: non-scaling-stroke;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  stroke-linecap: round;
-  filter: drop-shadow(0 0 6px rgba(255, 170, 110, 0.55));
-}
-
-.center {
-  position: absolute;
-  left: 50%;
-  top: 46%;
-  transform: translate(-50%, -50%);
+.titleRow {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  width: min(1100px, 94vw);
+  justify-content: center;
+  gap: clamp(14px, 2.4vw, 40px);
+  width: 100%;
 }
 
 .title {
   margin: 0;
-  display: flex;
-  gap: 0.22em;
   font-family: var(--display);
   font-weight: 900;
-  font-size: clamp(52px, 9.6vw, 168px);
+  font-size: clamp(52px, 9.4vw, 164px);
   line-height: 0.86;
   letter-spacing: -0.035em;
-  color: var(--paper-3);
-  /* a filter on the whole title (not text-shadow, which the per-letter clips would box in) */
-  filter: drop-shadow(0 4px 22px rgba(58, 36, 24, 0.45));
-}
-
-.word {
-  display: inline-flex;
-}
-
-.clip {
-  display: inline-block;
-  overflow: hidden;
-  padding: 0.04em 0.005em 0.06em;
-  margin: -0.04em 0 -0.06em;
-}
-
-.letter {
-  display: inline-block;
-  will-change: transform;
-}
-
-/* altitude labels sit at the screen edges, on the profile line */
-.label {
-  position: absolute;
-  top: calc(32% + 26vh * 0.8 - 30px);
-  left: clamp(16px, 3vw, 40px);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.16em;
   text-transform: uppercase;
   white-space: nowrap;
-  visibility: hidden;
+  color: var(--paper-3);
+  filter: drop-shadow(0 4px 22px rgba(58, 36, 24, 0.35));
 }
 
-.labelRight {
-  left: auto;
-  right: clamp(16px, 3vw, 40px);
-  top: calc(32% + 26vh * 0.9 - 30px);
+.label {
+  font-size: clamp(11px, 0.9vw, 14px);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  filter: drop-shadow(0 1px 8px rgba(58, 36, 24, 0.45));
 }
 
 .sub {
   display: flex;
   align-items: baseline;
-  gap: 0.3em;
-  margin-top: 0.15em;
+  gap: 0.28em;
+  margin-top: 0.05em;
   font-family: var(--display);
   font-weight: 800;
-  font-size: clamp(26px, 3.6vw, 52px);
-  text-shadow: 0 4px 24px rgba(58, 36, 24, 0.3);
-}
-
-.sub > * {
-  visibility: hidden;
+  font-size: clamp(26px, 3.4vw, 54px);
+  letter-spacing: -0.01em;
+  filter: drop-shadow(0 4px 18px rgba(58, 36, 24, 0.35));
 }
 
 .sub :global(.script) {
-  font-size: 1.15em;
-  color: #ffe2c2;
+  font-size: 1.12em;
 }
 
 .kicker {
-  margin: 18px 0 0;
-  font-size: 12px;
+  margin: clamp(8px, 1.6vh, 16px) 0 0;
+  font-size: clamp(9px, 0.75vw, 11px);
   font-weight: 800;
-  letter-spacing: 0.24em;
+  line-height: 1.15;
+  letter-spacing: 0.08em;
+  text-align: center;
   text-transform: uppercase;
-  visibility: hidden;
+  filter: drop-shadow(0 1px 8px rgba(58, 36, 24, 0.5));
+}
+
+/* route line: drawn on top of the title, revealed right → left via --line-reveal */
+.line {
+  --line-reveal: 100%;
+  position: absolute;
+  left: 0;
+  top: 10vh;
+  width: 100%;
+  height: 50vh;
+  overflow: visible;
+  clip-path: inset(-20px 0 -20px var(--line-reveal));
+}
+
+.line path {
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linecap: round;
 }
 
 .claim {
@@ -154,15 +144,15 @@
   left: clamp(16px, 3vw, 40px);
   bottom: clamp(20px, 4vh, 40px);
   margin: 0;
-  padding-left: 14px;
-  border-left: 3px solid var(--cherry);
+  padding-left: 12px;
+  border-left: 3px solid var(--accent);
   font-size: clamp(13px, 1.1vw, 16px);
   font-weight: 800;
-  line-height: 1.3;
-  letter-spacing: 0.04em;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
   max-width: 320px;
-  text-shadow: 0 2px 16px rgba(58, 36, 24, 0.45);
+  filter: drop-shadow(0 2px 12px rgba(58, 36, 24, 0.45));
   visibility: hidden;
 }
 
@@ -181,34 +171,65 @@
   visibility: hidden;
 }
 
-/* pill → circle morph on hover */
+/*
+  Start button.
+  The <button> keeps a fixed size (stable hit area, no flicker at its edge);
+  only the inner .startShape morphs.
+  Hover in : label blinks out → shape shrinks to a circle → arrow rises from
+             below while road markings stream down behind it.
+  Hover out: arrow drops away → circle stretches back to a pill → label returns.
+  Base rules hold the "leaving" timings, :hover rules the "entering" ones.
+*/
 .start {
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 236px;
-  height: 58px;
+  display: block;
+  width: 232px;
+  height: 56px;
   border-radius: 999px;
-  background: var(--cherry);
-  color: var(--paper-3);
-  box-shadow: 0 10px 30px -8px rgba(120, 30, 10, 0.55), inset 0 0 0 2px rgba(255, 255, 255, 0.12);
-  transition:
-    width 0.6s var(--alt-out),
-    background-color 0.4s var(--alt-out),
-    transform 0.6s var(--alt-out);
+  color: var(--ink);
+}
+
+.startShape {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 100%;
+  translate: -50% 0;
+  border-radius: 999px;
+  background: var(--accent);
   overflow: hidden;
+  box-shadow:
+    inset 0 0 0 2px rgba(58, 36, 24, 0.46),
+    0 0 0 1.5px rgba(251, 247, 238, 0.3),
+    0 10px 26px -12px rgba(58, 36, 24, 0.7);
+  transition: width 0.5s var(--alt-in-out) 0.12s;
 }
 
 .startLabel {
-  font-size: 13px;
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
   font-weight: 800;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.01em;
   text-transform: uppercase;
   white-space: nowrap;
-  transition:
-    opacity 0.3s var(--alt-out),
-    transform 0.5s var(--alt-out);
+  transition: opacity 0.3s ease 0.66s;
+}
+
+.startRoad {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  translate: -50% 0;
+  background: repeating-linear-gradient(to bottom, var(--ink) 0 9px, transparent 9px 18px);
+  opacity: 0;
+  transition: opacity 0.2s ease 0s;
+  animation: road 0.55s linear infinite paused;
 }
 
 .startIcon {
@@ -216,37 +237,53 @@
   inset: 0;
   display: grid;
   place-items: center;
-  opacity: 0;
-  transform: translateX(-14px);
-  transition:
-    opacity 0.35s var(--alt-out),
-    transform 0.55s var(--alt-out);
+  translate: 0 160%;
+  transition: translate 0.35s var(--alt-in) 0s;
 }
 
-.start:hover,
-.start:focus-visible {
-  width: 58px;
-  background: var(--cherry-dark);
-  transform: scale(1.06);
+.startIcon svg {
+  /* small accent halo so the arrow reads over the road markings */
+  filter: drop-shadow(0 0 2px var(--accent));
+}
+
+.start:hover .startShape,
+.start:focus-visible .startShape {
+  width: 56px;
+  transition: width 0.5s var(--alt-in-out) 0.08s;
 }
 
 .start:hover .startLabel,
 .start:focus-visible .startLabel {
   opacity: 0;
-  transform: scale(0.8);
+  transition: opacity 0.12s ease 0s;
+}
+
+.start:hover .startRoad,
+.start:focus-visible .startRoad {
+  opacity: 0.85;
+  transition: opacity 0.3s ease 0.45s;
+  animation-play-state: running;
 }
 
 .start:hover .startIcon,
 .start:focus-visible .startIcon {
-  opacity: 1;
-  transform: translateX(0);
-  transition-delay: 0.12s;
+  translate: 0 0;
+  transition: translate 0.5s var(--alt-out) 0.32s;
+}
+
+@keyframes road {
+  from {
+    background-position-y: 0;
+  }
+  to {
+    background-position-y: 18px;
+  }
 }
 
 .mute {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--paper-3);
   opacity: 0.75;
@@ -259,15 +296,15 @@
 }
 
 @media (max-width: 760px) {
-  .label {
-    display: none;
+  .titleRow {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .title {
+    white-space: normal;
+    text-align: center;
   }
   .claim {
     display: none;
-  }
-  .title {
-    flex-direction: column;
-    align-items: center;
-    gap: 0;
   }
 }

@@ -172,6 +172,11 @@ export class Experience {
     this.map.resize(w / h)
   }
 
+  /** Background half of the hero reveal (the DOM half lives in Hero.tsx). */
+  heroIntro() {
+    if (this.hero instanceof PhotoHero) this.hero.intro()
+  }
+
   /** Hero → map: push into the mist, roast the frame away, land on the diorama. */
   goToMap() {
     const u = this.post.uniforms

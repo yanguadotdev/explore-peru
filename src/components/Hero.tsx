@@ -1,103 +1,129 @@
 import { forwardRef, useImperativeHandle, useRef } from 'react'
 import { gsap } from '../lib/ease'
-import { Arrow, Mark } from './Icons'
+import { Mark } from './Icons'
 import s from './Hero.module.css'
 
 export type HeroHandle = { intro: () => void; outro: () => gsap.core.Timeline }
 
-const TITLE = ['RUTA', 'DEL', 'CAFÉ']
+// Route line across the hero (solid + offset dashed shadow), 1920×640 viewBox.
+const LINE =
+  'M1 558.922c12.228 3.058 40.963 1.427 58.082-29.563 21.398-38.739 44.835-40.778 54.006-40.778s48.91 22.428 84.575 8.156c35.664-14.272 38.721-18.35 51.967-19.37s15.285-19.369 21.399-24.466 17.323-9.175 36.683 0c19.361 9.175 63.177 8.155 86.613 0 23.437-8.155 37.702 8.156 56.044 10.195s31.588 0 43.816 0 12.228 4.077 22.418 5.097c10.189 1.019 23.436-7.137 31.588-15.292s19.36-6.116 31.588-6.116 30.57-20.39 42.797-22.428c12.228-2.039 27.513-4.078 34.645-11.214s16.304-11.214 33.627 0c17.322 11.214 37.702 18.35 62.157 6.117 24.456-12.233 39.74-30.583 69.291-15.291s21.398 25.484 57.063 20.388c35.664-5.097 31.588-4.078 43.816 3.058 12.227 7.136 30.569 3.059 42.797 0 12.227-3.058 45.858-13.251 57.058-8.155 11.21 5.097 29.55-.001 36.69-6.117 5.7-4.893 16.64-2.039 21.4 0 20.04 7.476 70.31 20.185 111.06 11.214 50.95-11.214 43.82-18.35 46.88-26.505 3.05-8.156 16.3-21.409 23.43-22.428 5.71-.815 13.93-5.777 17.33-8.155h16.3c9.85-3.738 32.2-9.787 42.8-4.078 10.59 5.709 56.04-32.283 77.44-51.992 8.15-7.476 31.18-24.058 58.08-30.583 33.63-8.155 72.35-20.388 81.52-66.263s49.93-118.254 78.46-135.585c28.53-17.33 29.55-4.078 35.67-4.078 6.11 0 10.18-4.077 20.37 0 10.19 4.078 88.66 36.701 99.86 24.468 11.21-12.233 19.36-16.312 31.59-20.39s15.29 7.137 38.72-27.523c18.75-27.73 56.73-29.904 73.37-27.525'
+const LINE_SHADOW = LINE.replace(/^M1 558\.922/, 'M-1 554.922')
 
-// Altitude profile from the summit (left) down to the town (right).
-const PROFILE =
-  'M0 210 C 60 200, 90 120, 150 118 S 230 40, 300 52 S 380 150, 450 140 S 540 70, 610 92 S 700 170, 780 160 S 880 120, 940 150 S 1060 230, 1120 214 S 1200 240, 1240 236'
+const TITLE = 'Ruta del Café'
+/** Letters (by index in TITLE) that sit IN FRONT of the route line; the rest go behind it. */
+const FRONT_LETTERS = new Set([0, 2, 6, 9, 11])
 
-type Props = { onStart: (withSound: boolean) => void }
-
-export const Hero = forwardRef<HeroHandle, Props>(function Hero({ onStart }, ref) {
-  const root = useRef<HTMLDivElement>(null)
-  const brand = useRef<HTMLDivElement>(null)
-  const letters = useRef<HTMLSpanElement[]>([])
-  const sub = useRef<HTMLDivElement>(null)
-  const kicker = useRef<HTMLParagraphElement>(null)
-  const line = useRef<SVGPathElement>(null)
-  const labels = useRef<HTMLSpanElement[]>([])
-  const claim = useRef<HTMLParagraphElement>(null)
-  const cta = useRef<HTMLDivElement>(null)
-
-  useImperativeHandle(ref, () => ({
-    intro() {
-      gsap.set(root.current, { autoAlpha: 1 })
-      const tl = gsap.timeline({ defaults: { ease: 'alt.out' } })
-      tl.fromTo(letters.current, { yPercent: 110, rotate: 6 }, { yPercent: 0, rotate: 0, duration: 1.4, stagger: 0.045 }, 0)
-        .fromTo(brand.current, { autoAlpha: 0, y: -12 }, { autoAlpha: 1, y: 0, duration: 1.1 }, 0.25)
-        .fromTo(sub.current?.children ?? [], { autoAlpha: 0, x: 28 }, { autoAlpha: 1, x: 0, duration: 1.15, stagger: 0.1 }, 0.5)
-        .fromTo(line.current, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 2.6, ease: 'alt.inOut' }, 0.3)
-        .fromTo(labels.current, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.8, stagger: 0.25 }, 1.1)
-        .fromTo(kicker.current, { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: 1 }, 0.9)
-        .fromTo(claim.current, { autoAlpha: 0, x: -20 }, { autoAlpha: 1, x: 0, duration: 1.1 }, 1.0)
-        .fromTo(cta.current, { autoAlpha: 0, y: 24, scale: 0.92 }, { autoAlpha: 1, y: 0, scale: 1, duration: 1.1 }, 1.15)
-    },
-    outro() {
-      const tl = gsap.timeline({ defaults: { ease: 'alt.in' } })
-      tl.to(cta.current, { autoAlpha: 0, y: 20, duration: 0.5 }, 0)
-        .to([claim.current, kicker.current, ...labels.current], { autoAlpha: 0, duration: 0.5, stagger: 0.04 }, 0)
-        .to(letters.current, { yPercent: -110, duration: 0.8, stagger: 0.03 }, 0.1)
-        .to(sub.current?.children ?? [], { autoAlpha: 0, x: -24, duration: 0.6, stagger: 0.06 }, 0.1)
-        .to(line.current, { strokeDashoffset: -1, duration: 1.2, ease: 'alt.inOut' }, 0)
-        .to(brand.current, { autoAlpha: 0, y: -12, duration: 0.6 }, 0.2)
-        .set(root.current, { autoAlpha: 0 })
-      return tl
-    },
-  }))
-
-  let li = 0
+function Letters({ front = false }: { front?: boolean }) {
   return (
-    <section className={s.hero} ref={root} aria-label="Ruta del Café">
-      <div className={s.brand} ref={brand}>
-        <Mark size={26} />
+    <>
+      {TITLE.split('').map((ch, i) => (
+        <span key={i} aria-hidden="true" className={front && FRONT_LETTERS.has(i) ? s.letterFront : undefined}>
+          {ch}
+        </span>
+      ))}
+    </>
+  )
+}
+
+/**
+ * The hero copy. Rendered twice with identical layout:
+ *  - layer "back": everything, under the route line
+ *  - layer "front": only the FRONT_LETTERS are visible, over the route line
+ * so the line weaves through the title.
+ */
+function HeroCopy({ layer }: { layer: 'back' | 'front' }) {
+  const front = layer === 'front'
+  return (
+    <>
+      <div className={s.brand}>
+        <Mark size={24} />
         <span className={s.brandName}>ALTURA</span>
         <span className={s.brandSep} />
         <span className={s.brandSub}>Café de Origen</span>
       </div>
 
-      <svg className={s.profile} viewBox="0 0 1240 260" preserveAspectRatio="none" aria-hidden="true">
-        <path ref={line} d={PROFILE} pathLength={1} />
-      </svg>
+      <div className={s.titleRow}>
+        <span className={s.label}>2.100 msnm</span>
+        {/* identical letter spans in both layers so they overlap pixel-perfectly */}
+        {front ? (
+          <div className={s.title}>
+            <Letters front />
+          </div>
+        ) : (
+          <h1 className={s.title} aria-label={TITLE}>
+            <Letters />
+          </h1>
+        )}
+        <span className={s.label}>1.250 msnm</span>
+      </div>
 
-      <span className={s.label} ref={(el) => void (el && (labels.current[0] = el))}>
-        2.100 msnm
-      </span>
-      <span className={`${s.label} ${s.labelRight}`} ref={(el) => void (el && (labels.current[1] = el))}>
-        1.250 msnm
-      </span>
+      <div className={s.sub}>
+        <span>De la</span>
+        <span className="script">Montaña</span>
+        <span>a tu</span>
+        <span className="script">Taza</span>
+      </div>
+      <p className={s.kicker}>
+        Seis paradas,
+        <br />
+        una cosecha,
+        <br />
+        un solo camino
+      </p>
+    </>
+  )
+}
 
-      <div className={s.center}>
-        <h1 className={s.title}>
-          {TITLE.map((word, wi) => (
-            <span className={s.word} key={wi}>
-              {word.split('').map((ch) => {
-                const i = li++
-                return (
-                  <span className={s.clip} key={i}>
-                    <span className={s.letter} ref={(el) => void (el && (letters.current[i] = el))}>
-                      {ch}
-                    </span>
-                  </span>
-                )
-              })}
-            </span>
-          ))}
-        </h1>
+type Props = { onStart: (withSound: boolean) => void }
 
-        <div className={s.sub} ref={sub}>
-          <span>De la</span>
-          <span className="script">Montaña</span>
-          <span>a tu</span>
-          <span className="script">Taza</span>
+export const Hero = forwardRef<HeroHandle, Props>(function Hero({ onStart }, ref) {
+  const root = useRef<HTMLElement>(null)
+  const scene = useRef<HTMLDivElement>(null)
+  const back = useRef<HTMLDivElement>(null)
+  const front = useRef<HTMLDivElement>(null)
+  const line = useRef<SVGSVGElement>(null)
+  const claim = useRef<HTMLParagraphElement>(null)
+  const cta = useRef<HTMLDivElement>(null)
+
+  useImperativeHandle(ref, () => ({
+    // Everything is already in place under the loader; as the burn uncovers it
+    // the composition grows into place (inside → out), the route draws
+    // right → left, then the call to action arrives.
+    intro() {
+      gsap.set(root.current, { autoAlpha: 1 })
+      const tl = gsap.timeline({ defaults: { ease: 'alt.out' } })
+      tl.fromTo(scene.current, { scale: 0.88 }, { scale: 1, duration: 2.8 }, 0)
+        .fromTo(line.current, { '--line-reveal': '100%' }, { '--line-reveal': '0%', duration: 2.4, ease: 'alt.inOut' }, 0.25)
+        .fromTo([claim.current, cta.current], { autoAlpha: 0, y: 18 }, { autoAlpha: 1, y: 0, duration: 1.1, stagger: 0.12 }, 0.75)
+    },
+    outro() {
+      const tl = gsap.timeline({ defaults: { ease: 'alt.in' } })
+      tl.to([cta.current, claim.current], { autoAlpha: 0, y: 16, duration: 0.45, stagger: 0.05 }, 0)
+        .to(line.current, { '--line-reveal': '100%', duration: 0.9, ease: 'alt.inOut' }, 0)
+        .to([back.current, front.current], { autoAlpha: 0, duration: 0.9, ease: 'alt.inOut' }, 0.1)
+        .to(scene.current, { scale: 1.06, duration: 0.9, ease: 'alt.inOut' }, 0.1)
+        .set(root.current, { autoAlpha: 0 })
+      return tl
+    },
+  }))
+
+  return (
+    <section className={s.hero} ref={root} aria-label="Ruta del Café">
+      {/* back copy → route line → front letters, zoomed together so they stay aligned */}
+      <div className={s.scene} ref={scene}>
+        <div className={s.stage} ref={back}>
+          <HeroCopy layer="back" />
         </div>
-        <p className={s.kicker} ref={kicker}>
-          Seis paradas · Una cosecha
-        </p>
+
+        <svg className={s.line} ref={line} viewBox="0 0 1920 640" preserveAspectRatio="none" fill="none" aria-hidden="true" focusable="false">
+          <path d={LINE} vectorEffect="non-scaling-stroke" />
+          <path d={LINE_SHADOW} vectorEffect="non-scaling-stroke" strokeDasharray="2 2" opacity=".4" />
+        </svg>
+
+        <div className={`${s.stage} ${s.stageFront}`} ref={front} aria-hidden="true">
+          <HeroCopy layer="front" />
+        </div>
       </div>
 
       <p className={s.claim} ref={claim}>
@@ -107,11 +133,17 @@ export const Hero = forwardRef<HeroHandle, Props>(function Hero({ onStart }, ref
       </p>
 
       <div className={s.cta} ref={cta}>
+        {/* fixed-size hit area; only the inner shape animates (no edge flicker) */}
         <button className={s.start} onClick={() => onStart(true)}>
-          <span className={s.startLabel}>Iniciar el viaje</span>
-          <span className={s.startIcon}>
-            <Arrow size={20} />
+          <span className={s.startShape} aria-hidden="true">
+            <span className={s.startRoad} />
+            <span className={s.startIcon}>
+              <svg width="18" height="20" viewBox="0 0 18 20">
+                <path d="M9 1 L17 19 L9 14.5 L1 19 Z" fill="currentColor" />
+              </svg>
+            </span>
           </span>
+          <span className={s.startLabel}>Iniciar el viaje</span>
         </button>
         <button className={s.mute} onClick={() => onStart(false)}>
           Entrar sin sonido

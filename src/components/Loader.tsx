@@ -99,9 +99,9 @@ export function Loader({ onRevealStart, onDone }: Props) {
           ?.dissolve({
             delay: 0.35,
             duration: 2.2,
-            onStart: () => {
-              gsap.delayedCall(0.66, onRevealStart)
-            },
+            // the hero is already composed underneath: it starts its settle-zoom
+            // the moment the burn opens
+            onStart: onRevealStart,
           })
           .then(() => {
             onDone()
