@@ -192,6 +192,22 @@ function Onboarding() {
   const body = useRef<HTMLDivElement>(null)
   const bar = useRef<HTMLSpanElement>(null)
   const card = useRef<HTMLDivElement>(null)
+  const prevSize = useRef<{ w: number; h: number } | null>(null)
+
+  // smooth width/height morph between steps (old box → new natural box)
+  useLayoutEffect(() => {
+    const el = card.current
+    const from = prevSize.current
+    if (!el || !from) return
+    prevSize.current = null
+    const to = el.getBoundingClientRect()
+    if (Math.abs(to.width - from.w) < 1 && Math.abs(to.height - from.h) < 1) return
+    gsap.fromTo(
+      el,
+      { width: from.w, height: from.h },
+      { width: to.width, height: to.height, duration: 0.55, ease: 'alt.inOut', clearProps: 'width,height' },
+    )
+  }, [step])
 
   useEffect(() => {
     if (closed) return
@@ -209,7 +225,12 @@ function Onboarding() {
             x: -14,
             duration: 0.35,
             ease: 'alt.in',
-            onComplete: () => setStep((v) => (v + 1) % STEPS.length),
+            onComplete: () => {
+              // remember the current box so the next text can morph from it
+              const r = card.current?.getBoundingClientRect()
+              if (r) prevSize.current = { w: r.width, h: r.height }
+              setStep((v) => (v + 1) % STEPS.length)
+            },
           })
         },
       },
@@ -512,6 +533,9 @@ function HoverCard() {
 
 // ------------------------------------------------------------------ stop panel
 
+/** "Peek" pose: a small tilted card poking in from the bottom-right corner. */
+const PEEK = { xPercent: 18, yPercent: 24, rotate: -4, scale: 0.58 }
+
 function StopPanel() {
   const openId = useStore((st) => st.openStop)
   const collected = useStore((st) => st.collected)
@@ -521,11 +545,16 @@ function StopPanel() {
   const content = useRef<HTMLDivElement>(null)
   const stampRef = useRef<HTMLDivElement>(null)
   const lenis = useRef<Lenis | null>(null)
+  const peek = useRef<HTMLDivElement>(null)
+  const hint = useRef<HTMLDivElement>(null)
+  const hintShown = useRef(false)
+  const isOpen = useRef(false)
 
   const stop = STOPS.find((x) => x.id === stopId)
 
-  // open / close orchestration
-  useEffect(() => {
+  // open / close orchestration — a layout effect so the panel mounts and starts
+  // moving in the same frame as the click (no post-paint render hop)
+  useLayoutEffect(() => {
     const el = panel.current
     if (!el) return
     const exp = getExperience()
@@ -540,15 +569,16 @@ function StopPanel() {
       setStopId(openId)
       audio.play('click')
     } else if (stopId) {
-      gsap.to(el, {
-        clipPath: 'inset(0 0 0 100% round 22px)',
-        duration: 0.7,
-        ease: 'alt.inOut',
+      // reverse: fold back into the tilted card, then drop out bottom-right
+      isOpen.current = false
+      const tl = gsap.timeline({
         onComplete: () => {
           setStopId(null)
           gsap.set(el, { visibility: 'hidden' })
         },
       })
+      tl.to(el, { ...PEEK, duration: 0.42, ease: 'alt.inOut', overwrite: true })
+        .to(el, { xPercent: 70, yPercent: 48, rotate: -8, autoAlpha: 0, duration: 0.3, ease: 'alt.in' })
       exp?.map.zoomOut()
     }
   }, [openId])
@@ -557,12 +587,37 @@ function StopPanel() {
   useLayoutEffect(() => {
     const el = panel.current
     if (!el || !stopId) return
-    gsap.set(el, { visibility: 'visible' })
-    gsap.fromTo(el, { clipPath: 'inset(0 0 0 100% round 22px)' }, { clipPath: 'inset(0 0 0 0% round 22px)', duration: 0.9, ease: 'alt.out' })
+    let contentDelay = 0.1
+    if (!isOpen.current) {
+      // first open: ONE continuous motion, starting on the click frame — the
+      // tilted card glides in from the bottom-right while straightening and
+      // growing into the full panel (ease-out, so it moves fastest right away)
+      isOpen.current = true
+      contentDelay = 0.15
+      gsap.set(el, { visibility: 'visible' })
+      gsap.fromTo(
+        el,
+        { autoAlpha: 0, xPercent: 40, yPercent: 32, rotate: -6, scale: 0.6 },
+        { autoAlpha: 1, xPercent: 0, yPercent: 0, rotate: 0, scale: 1, duration: 0.75, ease: 'alt.out', overwrite: true },
+      )
+      // the thumbnail flashes beside it and slides away as the panel arrives
+      gsap
+        .timeline()
+        .fromTo(peek.current, { autoAlpha: 0, x: 40, y: 40, rotate: 2 }, { autoAlpha: 1, x: 0, y: 0, rotate: -5, duration: 0.25, ease: 'alt.out' })
+        .to(peek.current, { autoAlpha: 0, x: -60, y: 20, rotate: -9, duration: 0.35, ease: 'alt.in' }, 0.2)
+    }
     const items = content.current?.querySelectorAll('[data-reveal]') ?? []
-    gsap.fromTo(items, { autoAlpha: 0, y: 26 }, { autoAlpha: 1, y: 0, duration: 0.9, stagger: 0.07, ease: 'alt.out', delay: 0.25 })
+    gsap.fromTo(items, { autoAlpha: 0, y: 26 }, { autoAlpha: 1, y: 0, duration: 0.65, stagger: 0.045, ease: 'alt.out', delay: contentDelay })
     scroller.current?.scrollTo({ top: 0 })
     lenis.current?.scrollTo(0, { immediate: true })
+
+    // "more below" hint: shown for each stop if the content overflows
+    const sc = scroller.current
+    if (hint.current && sc) {
+      const overflows = sc.scrollHeight > sc.clientHeight + 24
+      hintShown.current = overflows
+      gsap.fromTo(hint.current, { autoAlpha: 0, y: 12 }, { autoAlpha: overflows ? 1 : 0, y: 0, duration: 0.5, ease: 'alt.out', delay: contentDelay + 0.35, overwrite: true })
+    }
 
     // passport stamp
     const already = store.get().collected.includes(stopId)
@@ -574,7 +629,7 @@ function StopPanel() {
           scale: 1,
           rotate: -10,
           duration: 0.55,
-          delay: 1.1,
+          delay: contentDelay + 0.45,
           ease: 'back.out(1.6)',
           onStart: () => audio.play('stamp'),
           onComplete: () => {
@@ -592,12 +647,21 @@ function StopPanel() {
 
   // Lenis smooth scroll inside the panel
   useEffect(() => {
-    if (!scroller.current || !content.current) return
-    const l = new Lenis({ wrapper: scroller.current, content: content.current, smoothWheel: true, lerp: 0.09 })
+    const sc = scroller.current
+    if (!sc || !content.current) return
+    const l = new Lenis({ wrapper: sc, content: content.current, smoothWheel: true, lerp: 0.09 })
     lenis.current = l
     const raf = (time: number) => l.raf(time * 1000)
     gsap.ticker.add(raf)
+    // the first real scroll dismisses the "more below" hint
+    const onScroll = () => {
+      if (!hintShown.current || sc.scrollTop < 8) return
+      hintShown.current = false
+      gsap.to(hint.current, { autoAlpha: 0, y: 12, duration: 0.35, ease: 'alt.in', overwrite: true })
+    }
+    sc.addEventListener('scroll', onScroll, { passive: true })
     return () => {
+      sc.removeEventListener('scroll', onScroll)
       gsap.ticker.remove(raf)
       l.destroy()
     }
@@ -608,6 +672,11 @@ function StopPanel() {
   const prev = idx >= 0 ? MAIN_STOPS[(idx - 1 + MAIN_STOPS.length) % MAIN_STOPS.length] : null
 
   return (
+    <>
+    {/* thumbnail that rides beside the tilted card during the peek phase */}
+    <div className={s.panelPeek} ref={peek} style={{ visibility: 'hidden' }} aria-hidden="true">
+      {stop && <Illustration stop={stop} className={s.panelPeekArt} />}
+    </div>
     <aside className={s.panel} ref={panel} style={{ visibility: 'hidden' }} aria-hidden={!stop} aria-label={stop?.name}>
       <button className={s.panelClose} aria-label="Cerrar" onClick={() => store.set({ openStop: null })}>
         <Close />
@@ -679,7 +748,17 @@ function StopPanel() {
           )}
         </div>
       </div>
+      {/* "more below" hint, pinned to the panel bottom; fades on first scroll */}
+      <div className={s.scrollHint} ref={hint} style={{ visibility: 'hidden' }} aria-hidden="true">
+        <span className={s.scrollHintPill}>
+          Desliza para ver más
+          <svg width="12" height="14" viewBox="0 0 12 14" className={s.scrollHintArrow}>
+            <path d="M6 1v11M1.5 7.5 6 12l4.5-4.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      </div>
     </aside>
+    </>
   )
 }
 
