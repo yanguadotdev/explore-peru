@@ -79,7 +79,7 @@ export default function App() {
 
   return (
     <>
-      <canvas ref={canvas} className="webgl" aria-label="Mapa interactivo en 3D de la Ruta del Café" />
+      <canvas ref={canvas} className="webgl" aria-label="Mapa interactivo en 3D del Perú" />
       <Hero ref={hero} onStart={start} />
       {phase === 'map' && <MapUI />}
       {loader && <Loader onRevealStart={reveal} onDone={() => setLoader(false)} />}

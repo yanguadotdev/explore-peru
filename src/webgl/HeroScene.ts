@@ -4,7 +4,7 @@ import { NOISE } from './shaders/chunks'
 import { fbm2, mulberry32, ridged2 } from './utils/noise'
 
 /*
-  Hero: a dawn over coffee mountains, built entirely from layered ridge
+  Hero (3D fallback): a dawn over the Andes, built entirely from layered ridge
   silhouettes with aerial perspective, valley fog, drifting mist sheets,
   wax palms and a few birds. The camera slowly dollies forward with pointer
   parallax — standing in for the filmed road of the original reference.

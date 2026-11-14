@@ -81,18 +81,18 @@ function Header() {
     <header className={s.header} data-anim="header">
       <div className={s.logo} data-i>
         <Mark size={24} />
-        <span className={s.logoName}>ALTURA</span>
-        <span className={s.logoSub}>Café de Origen</span>
+        <span className={s.logoName}>KUNTUR</span>
+        <span className={s.logoSub}>Explora el Perú</span>
       </div>
 
       <div className={s.headerCenter} data-i>
         <span>De la</span>
-        <span className="script">Montaña</span>
+        <span className="script">Costa</span>
         <span className={s.headerBadge}>
-          <StopIcon icon="cup" size={18} />
+          <StopIcon icon="compass" size={18} />
         </span>
-        <span>a tu</span>
-        <span className="script">Taza</span>
+        <span>a la</span>
+        <span className="script">Selva</span>
       </div>
 
       <nav className={s.headerNav}>
@@ -106,7 +106,7 @@ function Header() {
               store.set({ listOpen: !listOpen })
             }}
           >
-            <RollText>Paradas</RollText>
+            <RollText>Regiones</RollText>
             <ListIcon size={16} />
           </button>
           <StopsList />
@@ -135,6 +135,9 @@ function Header() {
   )
 }
 
+/** Route stops first (in travel order), then every other region A→Z. */
+const LIST_ORDER = [...MAIN_STOPS, ...STOPS.filter((x) => x.kind !== 'stop').sort((a, b) => a.name.localeCompare(b.name, 'es'))]
+
 function StopsList() {
   const open = useStore((st) => st.listOpen)
   const collected = useStore((st) => st.collected)
@@ -154,7 +157,7 @@ function StopsList() {
   return (
     <div className={s.list} ref={ref} style={{ visibility: 'hidden' }}>
       <ol>
-        {MAIN_STOPS.map((stop) => (
+        {LIST_ORDER.map((stop) => (
           <li key={stop.id}>
             <button
               onClick={() => {
@@ -162,11 +165,11 @@ function StopsList() {
                 store.set({ listOpen: false, openStop: stop.id })
               }}
             >
-              <span className={s.listNum}>{String(stop.index).padStart(2, '0')}</span>
+              <span className={`${s.listNum} ${stop.kind === 'stop' ? '' : s.listNumOff}`}>{stop.kind === 'stop' ? String(stop.index).padStart(2, '0') : '·'}</span>
               <span className={s.listText}>
                 <strong>{stop.name}</strong>
                 <em>
-                  {stop.stage} · {stop.altitude.toLocaleString('es')} msnm
+                  {stop.stage} · Capital: {stop.capital}
                 </em>
               </span>
               {collected.includes(stop.id) && <span className={s.listCheck}>✓</span>}
@@ -181,9 +184,9 @@ function StopsList() {
 // ------------------------------------------------------------------ onboarding
 
 const STEPS = [
-  { title: 'Recorre la ruta', body: 'Arrastra el mapa y usa la rueda para acercarte a la montaña.', icon: 'mirador' as const },
-  { title: 'Explora las paradas', body: 'Haz clic en los pines para descubrir cada etapa y ganar su sello.', icon: 'cherry' as const },
-  { title: 'Cambia de transporte', body: 'Recorre la ruta en jeep, a lomo de mula o en chiva.', icon: 'sack' as const },
+  { title: 'Recorre el Perú', body: 'Arrastra el mapa y usa la rueda para acercarte a los Andes, la costa y la selva.', icon: 'compass' as const },
+  { title: 'Explora las regiones', body: 'Haz clic en los pines para descubrir los 25 departamentos y sus curiosidades.', icon: 'machu' as const },
+  { title: 'Colecciona sellos', body: 'Visita las 8 paradas de la ruta para completar tu pasaporte viajero.', icon: 'flag' as const },
 ]
 
 function Onboarding() {
@@ -297,9 +300,9 @@ function SoundToggle() {
 // ------------------------------------------------------------------ vehicles
 
 const VEHICLES: { id: VehicleId; name: string }[] = [
-  { id: 'jeep', name: 'Jeep' },
-  { id: 'mula', name: 'Mula' },
-  { id: 'chiva', name: 'Chiva' },
+  { id: 'combi', name: 'Combi' },
+  { id: 'llama', name: 'Llama' },
+  { id: 'tren', name: 'Tren' },
 ]
 
 function VehicleSwitcher() {
@@ -339,17 +342,17 @@ function VehicleSwitcher() {
         <PromoArt />
         <div className={s.promoText}>
           <span className="script">Descubre</span>
-          <strong>La Taza</strong>
+          <strong>Machu Picchu</strong>
           <button
             className={s.promoBtn}
             tabIndex={open ? 0 : -1}
             onClick={() => {
               audio.play('click')
               setOpen(false)
-              store.set({ openStop: 'pueblo' })
+              store.set({ openStop: 'cusco' })
             }}
           >
-            Ir a la cafetería
+            Ir a Cusco
           </button>
         </div>
       </div>
@@ -402,7 +405,7 @@ function VehicleSwitcher() {
   )
 }
 
-/** Little coffee-depot illustration used on the switcher toggle. */
+/** Little bus-station illustration used on the switcher toggle. */
 function DepotIcon() {
   return (
     <svg width="58" height="58" viewBox="0 0 64 64" aria-hidden="true">
@@ -419,7 +422,7 @@ function DepotIcon() {
   )
 }
 
-/** Promo card art: the town café at dusk. */
+/** Promo card art: Machu Picchu terraces under Huayna Picchu at dusk. */
 function PromoArt() {
   return (
     <svg className={s.promoArt} viewBox="0 0 240 130" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
@@ -430,17 +433,16 @@ function PromoArt() {
         </linearGradient>
       </defs>
       <rect width="240" height="130" fill="url(#promo-sky)" />
-      <path d="M0 78 C40 52 70 66 110 50 S190 46 240 64 V130 H0Z" fill="#8FA08C" />
-      <rect x="40" y="52" width="150" height="62" fill="#F3EADB" />
-      <path d="M32 54 L115 30 L198 54 Z" fill="#B24A2C" />
-      {[0, 1, 2, 3, 4, 5].map((i) => (
-        <rect key={i} x={46 + i * 24} y="70" width="20" height="10" fill={i % 2 ? '#C8412B' : '#F7EEDC'} />
+      <path d="M0 80 L40 46 L70 70 L110 30 L150 64 L190 40 L240 70 V130 H0Z" fill="#9AA6A0" />
+      <path d="M120 112 L150 22 L168 30 L190 112Z" fill="#3E6A35" />
+      {[0, 1, 2, 3, 4].map((i) => (
+        <rect key={i} x={30 + i * 8} y={84 + i * 7} width={150 - i * 16} height="7" fill={i % 2 ? '#7FA65A' : '#8DB363'} />
       ))}
-      <rect x="54" y="84" width="22" height="30" fill="#3A2418" />
-      <rect x="92" y="84" width="40" height="20" fill="#3F7F86" opacity=".85" />
-      <rect x="146" y="84" width="30" height="20" fill="#3F7F86" opacity=".85" />
-      <rect x="0" y="114" width="240" height="16" fill="#CDB68A" />
-      <circle cx="205" cy="34" r="12" fill="#FBEBC9" opacity=".9" />
+      {[0, 1, 2, 3, 4, 5].map((i) => (
+        <rect key={i} x={48 + i * 16} y="74" width="11" height="9" fill="#B7AE9C" />
+      ))}
+      <rect x="0" y="118" width="240" height="12" fill="#5E7E5C" />
+      <circle cx="205" cy="30" r="11" fill="#FBEBC9" opacity=".9" />
     </svg>
   )
 }
@@ -518,11 +520,11 @@ function HoverCard() {
           <>
             <Illustration stop={stop} className={s.hoverArt} />
             <div className={s.hoverText}>
-              <span className={s.hoverKicker}>{stop.kind === 'stop' ? `Parada ${String(stop.index).padStart(2, '0')} · ${stop.stage}` : 'Desvío'}</span>
+              <span className={s.hoverKicker}>{stop.kind === 'stop' ? `Parada ${String(stop.index).padStart(2, '0')} · ${stop.stage}` : stop.stage}</span>
               <strong>{stop.name}</strong>
-              <span className={s.hoverAlt}>{stop.altitude.toLocaleString('es')} msnm</span>
+              <span className={s.hoverAlt}>Capital: {stop.capital} · {stop.altitude.toLocaleString('es')} msnm</span>
               <p>{stop.teaser}</p>
-              {stop.kind === 'stop' && <span className={s.hoverCta}>Clic para explorar</span>}
+              <span className={s.hoverCta}>Clic para explorar</span>
             </div>
           </>
         )}
@@ -560,12 +562,9 @@ function StopPanel() {
     const exp = getExperience()
     if (openId) {
       const target = STOPS.find((x) => x.id === openId)!
-      exp?.map.flyTo(openId, target.kind === 'stop')
-      if (target.kind === 'detour') {
-        // detours only get the hover card; nudge the camera there
-        store.set({ openStop: null })
-        return
-      }
+      exp?.map.flyTo(openId, true)
+      exp?.map.setSelected(openId)
+      void target
       setStopId(openId)
       audio.play('click')
     } else if (stopId) {
@@ -580,6 +579,7 @@ function StopPanel() {
       tl.to(el, { ...PEEK, duration: 0.42, ease: 'alt.inOut', overwrite: true })
         .to(el, { xPercent: 70, yPercent: 48, rotate: -8, autoAlpha: 0, duration: 0.3, ease: 'alt.in' })
       exp?.map.zoomOut()
+      exp?.map.setSelected(null)
     }
   }, [openId])
 
@@ -619,10 +619,12 @@ function StopPanel() {
       gsap.fromTo(hint.current, { autoAlpha: 0, y: 12 }, { autoAlpha: overflows ? 1 : 0, y: 0, duration: 0.5, ease: 'alt.out', delay: contentDelay + 0.35, overwrite: true })
     }
 
-    // passport stamp
+    // passport stamp — only the 8 route stops award one
+    const onRoute = STOPS.find((x) => x.id === stopId)?.kind === 'stop'
     const already = store.get().collected.includes(stopId)
     const st = stampRef.current
-    if (st) {
+    if (st && !onRoute) gsap.set(st, { autoAlpha: 0, overwrite: true })
+    else if (st) {
       if (!already) {
         gsap.fromTo(st, { autoAlpha: 0, scale: 2.2, rotate: -40 }, {
           autoAlpha: 1,
@@ -693,12 +695,13 @@ function StopPanel() {
               </div>
               <div className={s.panelBody}>
                 <span className={s.panelKicker} data-reveal>
-                  Parada {String(stop.index).padStart(2, '0')} / {String(MAIN_STOPS.length).padStart(2, '0')} · {stop.stage}
+                  {stop.kind === 'stop' ? `Parada ${String(stop.index).padStart(2, '0')} / ${String(MAIN_STOPS.length).padStart(2, '0')} · ` : 'Región · '}{stop.stage}
                 </span>
                 <h2 className={s.panelTitle} data-reveal>
                   {stop.name}
                 </h2>
                 <div className={s.panelMeta} data-reveal>
+                  <span>Capital: {stop.capital}</span>
                   <span>{stop.altitude.toLocaleString('es')} msnm</span>
                   {collected.includes(stop.id) && <span className={s.panelGot}>Sello obtenido</span>}
                 </div>
@@ -714,9 +717,9 @@ function StopPanel() {
                 ))}
                 {stop.note && (
                   <div className={s.panelNote} data-reveal>
-                    <StopIcon icon="cup" size={28} />
+                    <StopIcon icon="compass" size={28} />
                     <div>
-                      <span>En la taza</span>
+                      <span>Imperdible</span>
                       <strong>{stop.note}</strong>
                     </div>
                   </div>
@@ -792,7 +795,7 @@ function StampsModal() {
         <button className={s.modalClose} aria-label="Cerrar" onClick={() => store.set({ stampsOpen: false })}>
           <Close />
         </button>
-        <span className={s.modalKicker}>Pasaporte cafetero</span>
+        <span className={s.modalKicker}>Pasaporte viajero</span>
         <h2 className={s.modalTitle}>
           {all ? (
             <>
@@ -806,7 +809,7 @@ function StampsModal() {
         </h2>
         <p className={s.modalLead}>
           {all
-            ? 'Recorriste las seis paradas: ya conoces todo lo que hay detrás de tu taza.'
+            ? 'Recorriste las ocho paradas: de la Amazonía al Titicaca, el Perú ya es parte de tu historia.'
             : `Visita cada parada para ganar su sello. Llevas ${collected.length} de ${MAIN_STOPS.length}.`}
         </p>
         <div className={s.stamps}>
@@ -822,7 +825,7 @@ function StampsModal() {
                 }}
               >
                 <Stamp stop={stop} collected={got} size={112} />
-                <span>{stop.stage}</span>
+                <span>{stop.name}</span>
               </button>
             )
           })}

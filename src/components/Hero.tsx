@@ -10,9 +10,9 @@ const LINE =
   'M1 558.922c12.228 3.058 40.963 1.427 58.082-29.563 21.398-38.739 44.835-40.778 54.006-40.778s48.91 22.428 84.575 8.156c35.664-14.272 38.721-18.35 51.967-19.37s15.285-19.369 21.399-24.466 17.323-9.175 36.683 0c19.361 9.175 63.177 8.155 86.613 0 23.437-8.155 37.702 8.156 56.044 10.195s31.588 0 43.816 0 12.228 4.077 22.418 5.097c10.189 1.019 23.436-7.137 31.588-15.292s19.36-6.116 31.588-6.116 30.57-20.39 42.797-22.428c12.228-2.039 27.513-4.078 34.645-11.214s16.304-11.214 33.627 0c17.322 11.214 37.702 18.35 62.157 6.117 24.456-12.233 39.74-30.583 69.291-15.291s21.398 25.484 57.063 20.388c35.664-5.097 31.588-4.078 43.816 3.058 12.227 7.136 30.569 3.059 42.797 0 12.227-3.058 45.858-13.251 57.058-8.155 11.21 5.097 29.55-.001 36.69-6.117 5.7-4.893 16.64-2.039 21.4 0 20.04 7.476 70.31 20.185 111.06 11.214 50.95-11.214 43.82-18.35 46.88-26.505 3.05-8.156 16.3-21.409 23.43-22.428 5.71-.815 13.93-5.777 17.33-8.155h16.3c9.85-3.738 32.2-9.787 42.8-4.078 10.59 5.709 56.04-32.283 77.44-51.992 8.15-7.476 31.18-24.058 58.08-30.583 33.63-8.155 72.35-20.388 81.52-66.263s49.93-118.254 78.46-135.585c28.53-17.33 29.55-4.078 35.67-4.078 6.11 0 10.18-4.077 20.37 0 10.19 4.078 88.66 36.701 99.86 24.468 11.21-12.233 19.36-16.312 31.59-20.39s15.29 7.137 38.72-27.523c18.75-27.73 56.73-29.904 73.37-27.525'
 const LINE_SHADOW = LINE.replace(/^M1 558\.922/, 'M-1 554.922')
 
-const TITLE = 'Ruta del Café'
+const TITLE = 'Explora Perú'
 /** Letters (by index in TITLE) that sit IN FRONT of the route line; the rest go behind it. */
-const FRONT_LETTERS = new Set([0, 2, 6, 9, 11])
+const FRONT_LETTERS = new Set([0, 2, 5, 9, 11])
 
 function Letters({ front = false }: { front?: boolean }) {
   return (
@@ -38,13 +38,13 @@ function HeroCopy({ layer }: { layer: 'back' | 'front' }) {
     <>
       <div className={s.brand}>
         <Mark size={24} />
-        <span className={s.brandName}>ALTURA</span>
+        <span className={s.brandName}>KUNTUR</span>
         <span className={s.brandSep} />
-        <span className={s.brandSub}>Café de Origen</span>
+        <span className={s.brandSub}>Viajes por el Perú</span>
       </div>
 
       <div className={s.titleRow}>
-        <span className={s.label}>2.100 msnm</span>
+        <span className={s.label}>0 msnm</span>
         {/* identical letter spans in both layers so they overlap pixel-perfectly */}
         {front ? (
           <div className={s.title}>
@@ -55,21 +55,21 @@ function HeroCopy({ layer }: { layer: 'back' | 'front' }) {
             <Letters />
           </h1>
         )}
-        <span className={s.label}>1.250 msnm</span>
+        <span className={s.label}>6 768 msnm</span>
       </div>
 
       <div className={s.sub}>
-        <span>De la</span>
-        <span className="script">Montaña</span>
-        <span>a tu</span>
-        <span className="script">Taza</span>
+        <span>25</span>
+        <span className="script">Regiones</span>
+        <span>3</span>
+        <span className="script">Mundos</span>
       </div>
       <p className={s.kicker}>
-        Seis paradas,
+        Costa, sierra
         <br />
-        una cosecha,
+        y selva en un
         <br />
-        un solo camino
+        solo viaje
       </p>
     </>
   )
@@ -109,7 +109,7 @@ export const Hero = forwardRef<HeroHandle, Props>(function Hero({ onStart }, ref
   }))
 
   return (
-    <section className={s.hero} ref={root} aria-label="Ruta del Café">
+    <section className={s.hero} ref={root} aria-label="Explora Perú">
       {/* back copy → route line → front letters, zoomed together so they stay aligned */}
       <div className={s.scene} ref={scene}>
         <div className={s.stage} ref={back}>
@@ -127,9 +127,9 @@ export const Hero = forwardRef<HeroHandle, Props>(function Hero({ onStart }, ref
       </div>
 
       <p className={s.claim} ref={claim}>
-        Cada grano recorre un camino
+        Del Pacífico a la Amazonía,
         <br />
-        antes de llegar a tu taza.
+        cruzando los Andes.
       </p>
 
       <div className={s.cta} ref={cta}>

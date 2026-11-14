@@ -128,16 +128,16 @@ export function Loader({ onRevealStart, onDone }: Props) {
 
         <div className={s.tagline} ref={tagline} aria-hidden="true">
           <span data-w className={s.tagWord}>
-            De la
+            25
           </span>
           <span data-w className={`${s.tagScript} script`}>
-            Montaña
+            Regiones
           </span>
           <span data-w className={s.tagWord}>
-            a tu
+            3
           </span>
           <span data-w className={`${s.tagScript} script`}>
-            Taza
+            Mundos
           </span>
         </div>
       </div>
@@ -149,14 +149,15 @@ export function Loader({ onRevealStart, onDone }: Props) {
           <circle cx="24" cy="30" r="6" className={s.node} />
           <circle cx="576" cy="114" r="6" className={s.node} />
           <text x="24" y="12" className={s.nodeLabel} textAnchor="start">
-            2.100 msnm
+            Tumbes
           </text>
           <text x="576" y="136" className={s.nodeLabel} textAnchor="end">
-            tu taza
+            Tacna
           </text>
           <g ref={bean}>
-            <ellipse rx="6.5" ry="9" transform="rotate(-25)" className={s.bean} />
-            <path d="M-2 -7 C 3 -2, -3 3, 2 8" className={s.beanCrease} />
+            {/* traveller marker riding the route */}
+            <circle r="8" className={s.bean} />
+            <circle r="3" className={s.beanCrease} />
           </g>
         </svg>
       </div>

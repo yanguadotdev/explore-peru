@@ -13,72 +13,159 @@ const stroke = {
 }
 
 const STOP_PATHS: Record<IconKey, JSX.Element> = {
-  cherry: (
+  beach: (
     <g {...stroke}>
-      <path d="M24 8c-2 6-6 10-11 13M24 8c3 7 6 10 11 12" />
-      <path d="M24 8c4-3 9-3 12-1-3 3-8 3-12 1z" />
-      <circle cx="14" cy="29" r="7" />
-      <circle cx="34" cy="28" r="7" />
-      <path d="M12 26c1-1 2-1.5 3.5-1.5M32 25c1-1 2-1.5 3.5-1.5" />
+      <circle cx="34" cy="12" r="5" />
+      <path d="M14 38c0-10 2-18 6-24M20 14c-5-1-9 1-11 4M20 14c4-3 9-3 12 0M20 14c-1 4 0 7 2 9" />
+      <path d="M4 40c6-3 12-3 18 0s12 3 18 0" />
     </g>
   ),
-  tanks: (
+  wave: (
     <g {...stroke}>
-      <rect x="6" y="18" width="12" height="20" rx="2" />
-      <rect x="22" y="14" width="12" height="24" rx="2" />
-      <path d="M6 24h12M22 21h12M38 30c0 3-2 5-2 5s-2-2-2-5 2-6 2-6 2 3 2 6z" />
-      <path d="M4 40h40" />
+      <path d="M4 34c6-14 18-22 30-18 6 2 9 7 7 12-3-4-8-5-12-2-3 2-4 6-3 8" />
+      <path d="M4 42c6-3 12-3 18 0s12 3 18 0" />
     </g>
   ),
-  patio: (
+  pyramid: (
     <g {...stroke}>
-      <circle cx="35" cy="12" r="5" />
-      <path d="M35 3v2M35 19v2M26 12h2M42 12h2" />
-      <path d="M5 38l6-12h26l6 12z" />
-      <path d="M14 32h20M10 36h28" strokeDasharray="1 4" />
+      <path d="M6 40h36L34 30H14z" />
+      <path d="M14 30l3-8h14l3 8M17 22l3-7h8l3 7" />
     </g>
   ),
-  sack: (
+  ruins: (
     <g {...stroke}>
-      <path d="M15 10h18l-3 5c6 4 9 11 8 18-1 5-6 7-14 7s-13-2-14-7c-1-7 2-14 8-18z" />
-      <path d="M17 15h14" />
-      <ellipse cx="24" cy="29" rx="3.5" ry="5" transform="rotate(-25 24 29)" />
-      <path d="M22.5 25c2 2 1 6 3 8" />
+      <path d="M6 40h36M8 40V24h10v16M22 40V18h10v22M36 40V28h5v12" />
+      <path d="M8 30h10M22 26h10M22 33h10" />
     </g>
   ),
-  roaster: (
+  church: (
     <g {...stroke}>
-      <path d="M10 22h24a4 4 0 0 1 4 4v6a4 4 0 0 1-4 4H10z" />
-      <path d="M10 22v14M38 29h4M16 36l-3 6M30 36l3 6" />
-      <path d="M17 18c-2-3 2-5 0-9M24 18c-2-3 2-5 0-9M31 18c-2-3 2-5 0-9" />
+      <path d="M10 40V20h28v20M14 20v-6h6v6M28 20v-6h6v6M17 14V9M31 14V9" />
+      <path d="M20 40v-9a4 4 0 0 1 8 0v9" />
     </g>
   ),
-  cup: (
+  fortress: (
     <g {...stroke}>
-      <path d="M8 20h26v6c0 8-6 13-13 13S8 34 8 26z" />
-      <path d="M34 23h3a4 4 0 0 1 0 8h-4" />
-      <path d="M5 42h34" />
-      <path d="M15 15c-2-3 2-4 0-8M22 15c-2-3 2-4 0-8M29 15c-2-3 2-4 0-8" />
+      <ellipse cx="24" cy="30" rx="18" ry="8" />
+      <path d="M6 30v6c0 4 8 8 18 8s18-4 18-8v-6" />
+      <path d="M16 27l3-6 3 6M26 25l3-6 3 6" />
     </g>
   ),
-  mirador: (
+  dolphin: (
     <g {...stroke}>
-      <path d="M16 42l3-24h10l3 24M18 30h12M14 18h20l-10-9z" />
+      <path d="M6 30c6-12 20-16 32-10l4-4 1 7c2 2 2 4 0 6-8-2-14 0-20 6l-2-5c-5 1-11 2-15 0z" />
+      <path d="M4 42c6-3 12-3 18 0s12 3 18 0" />
+    </g>
+  ),
+  orchid: (
+    <g {...stroke}>
+      <circle cx="24" cy="22" r="4" />
+      <path d="M24 18c-3-8 3-12 6-8M24 18c3-8-3-12-6-8M20 22c-8-2-10 5-5 7M28 22c8-2 10 5 5 7M24 26c-2 6 0 10 0 10s2-4 0-10" />
+      <path d="M24 36v6" />
+    </g>
+  ),
+  mountain: (
+    <g {...stroke}>
+      <path d="M4 40l14-24 8 12 5-6 13 18z" />
+      <path d="M14 23l4 2 4-3M28 26l3 1" />
+    </g>
+  ),
+  textile: (
+    <g {...stroke}>
+      <rect x="8" y="8" width="32" height="32" rx="2" />
+      <path d="M8 18h8v8h8v8h8M40 18h-8v8M16 40v-6M24 8v6h8" />
+    </g>
+  ),
+  city: (
+    <g {...stroke}>
+      <path d="M6 40h36M10 40V22h8v18M22 40V12h8v28M34 40V18h6v22" />
+      <path d="M25 18h2M25 24h2M25 30h2M13 28h2M13 34h2" />
+    </g>
+  ),
+  port: (
+    <g {...stroke}>
+      <path d="M6 34h36l-5 6H11z" />
+      <path d="M14 34V22h14v12M28 26h8v8M18 22v-6h6v6" />
+    </g>
+  ),
+  train: (
+    <g {...stroke}>
+      <rect x="10" y="10" width="28" height="22" rx="4" />
+      <path d="M10 22h28M16 32l-4 8M32 32l4 8M8 40h32" />
+      <circle cx="17" cy="27" r="1.5" />
+      <circle cx="31" cy="27" r="1.5" />
+    </g>
+  ),
+  dance: (
+    <g {...stroke}>
+      <circle cx="24" cy="9" r="4" />
+      <path d="M24 13v14l-6 13M24 27l6 13M24 18l-10-6M24 18l10-6" />
+      <path d="M10 10l5 4M38 10l-5 4" />
+    </g>
+  ),
+  desert: (
+    <g {...stroke}>
+      <path d="M4 38c8-10 16-10 24-4 6-6 12-5 16 4" />
+      <path d="M24 26v-16M24 14l-5-4M24 18l5-4" />
       <path d="M4 42h40" />
     </g>
   ),
-  waterfall: (
+  canyon: (
     <g {...stroke}>
-      <path d="M6 10h14v10M28 10h14" />
-      <path d="M20 14v20M24 12v24M28 14v20" />
-      <path d="M12 40c4-3 8-3 12 0s8 3 12 0" />
+      <path d="M4 12l8 6 4 16 4 6h8l4-6 4-16 8-6" />
+      <path d="M22 40c1-4-1-7 2-10 2-2 1-5 0-7" />
     </g>
   ),
-  market: (
+  machu: (
     <g {...stroke}>
-      <path d="M6 18l4-9h28l4 9z" />
-      <path d="M6 18c0 3 3 4 6 4s6-1 6-4c0 3 3 4 6 4s6-1 6-4c0 3 3 4 6 4s6-1 6-4" />
-      <path d="M10 22v18h28V22M20 40v-9h8v9" />
+      <path d="M22 26l8-18 10 18" />
+      <path d="M4 42h40M6 42v-6h36v6M9 36v-5h30v5M13 31v-5h22" />
+    </g>
+  ),
+  macaw: (
+    <g {...stroke}>
+      <path d="M26 8c-6 0-10 4-10 10v6l-6 16 10-8 6 10 2-14c6-2 8-8 6-14-2-4-5-6-8-6z" />
+      <path d="M30 14c3 0 5 2 5 4l-4 1" />
+      <circle cx="27" cy="13" r="1.4" />
+    </g>
+  ),
+  lake: (
+    <g {...stroke}>
+      <path d="M4 16l8-6 6 4 8-6 8 5 10-3" />
+      <ellipse cx="24" cy="30" rx="18" ry="8" />
+      <path d="M14 30c3-2 6-2 9 0M26 32c3-2 6-2 9 0" />
+    </g>
+  ),
+  volcano: (
+    <g {...stroke}>
+      <path d="M4 40l14-22h12l14 22z" />
+      <path d="M18 18l3 4 3-3 3 3 3-4" />
+      <path d="M22 12c-2-3 2-5 0-8M28 12c-2-3 2-5 0-8" />
+    </g>
+  ),
+  grape: (
+    <g {...stroke}>
+      <path d="M24 6v6M24 10c4-4 9-4 11-1" />
+      <circle cx="18" cy="18" r="4" />
+      <circle cx="26" cy="18" r="4" />
+      <circle cx="22" cy="25" r="4" />
+      <circle cx="30" cy="25" r="4" />
+      <circle cx="26" cy="32" r="4" />
+      <circle cx="22" cy="39" r="3.5" />
+    </g>
+  ),
+  flag: (
+    <g {...stroke}>
+      <path d="M10 42V6" />
+      <path d="M10 8h28v18H10" />
+      <path d="M19 8v18M29 8v18" />
+    </g>
+  ),
+  compass: (
+    <g {...stroke}>
+      <circle cx="24" cy="24" r="17" />
+      <path d="M24 12l5 12-5 12-5-12z" />
+      <path d="M24 4v4M24 40v4M4 24h4M40 24h4" />
     </g>
   ),
 }
@@ -92,60 +179,59 @@ export function StopIcon({ icon, size = 32, className }: P & { icon: IconKey }) 
 }
 
 export function VehicleIcon({ id, size = 56 }: P & { id: VehicleId }) {
-  if (id === 'mula')
+  if (id === 'llama')
     return (
       <svg width={size} height={size} viewBox="0 0 64 48" aria-hidden="true">
-        <rect x="14" y="16" width="30" height="13" rx="5" fill="#6A4A33" />
-        <path d="M42 18l8-9 4 2-1 10-7 4z" fill="#6A4A33" />
-        <path d="M49 9l1-6 2 6M52 10l3-5 0 6" stroke="#6A4A33" strokeWidth="2" fill="none" />
-        <rect x="20" y="14" width="16" height="12" rx="2" fill="#CDB68A" />
-        <rect x="19" y="12" width="18" height="3" rx="1" fill="#B24A2C" />
-        <path d="M18 29v12M23 29v12M37 29v12M41 29v12" stroke="#4E3524" strokeWidth="3" strokeLinecap="round" />
-        <path d="M14 19l-5 6" stroke="#3B281C" strokeWidth="2.5" strokeLinecap="round" />
+        <rect x="16" y="20" width="24" height="11" rx="5" fill="#EFE4D0" />
+        <path d="M36 22V8h6v14z" fill="#EFE4D0" />
+        <rect x="36" y="6" width="12" height="6" rx="3" fill="#EFE4D0" />
+        <path d="M38 6l1-5 2 5M42 6l1-5 2 5" fill="#EFE4D0" />
+        <rect x="20" y="18" width="14" height="10" rx="2" fill="#C8412B" />
+        <rect x="20" y="22" width="14" height="2" fill="#E2A43A" />
+        <path d="M19 31v12M23 31v12M34 31v12M38 31v12" stroke="#D9CCB4" strokeWidth="3" strokeLinecap="round" />
+        <circle cx="46" cy="9" r="1" fill="#3A2A20" />
       </svg>
     )
-  if (id === 'chiva')
+  if (id === 'tren')
     return (
       <svg width={size} height={size} viewBox="0 0 64 48" aria-hidden="true">
-        <rect x="6" y="20" width="50" height="14" rx="2" fill="#F2C230" />
-        <rect x="6" y="26" width="50" height="3" fill="#C8412B" />
-        <rect x="6" y="29" width="50" height="2.5" fill="#2F6B9A" />
-        <rect x="8" y="12" width="40" height="9" fill="#F7EEDC" />
-        {[0, 1, 2, 3, 4].map((i) => (
-          <rect key={i} x={8 + i * 9.5} y="12" width="2" height="9" fill="#3E6A35" />
+        <rect x="32" y="16" width="26" height="16" rx="3" fill="#23466E" />
+        <rect x="34" y="10" width="10" height="8" fill="#23466E" />
+        <rect x="52" y="10" width="4" height="7" fill="#2B241F" />
+        <rect x="4" y="16" width="26" height="16" rx="3" fill="#23466E" />
+        <rect x="6" y="18" width="22" height="6" rx="1" fill="#9FC3DA" />
+        <rect x="4" y="26" width="54" height="2.5" fill="#E2A43A" />
+        {[9, 21, 38, 52].map((x) => (
+          <circle key={x} cx={x} cy="35" r="4" fill="#2B241F" />
         ))}
-        <rect x="48" y="16" width="10" height="16" rx="2" fill="#C8412B" />
-        <rect x="6" y="10" width="44" height="3" fill="#3A2418" />
-        <rect x="12" y="5" width="8" height="5" rx="1" fill="#CDB68A" />
-        <rect x="22" y="5" width="8" height="5" rx="1" fill="#BFA676" />
-        <rect x="32" y="5" width="8" height="5" rx="1" fill="#CDB68A" />
-        <circle cx="16" cy="36" r="5" fill="#2B241F" />
-        <circle cx="46" cy="36" r="5" fill="#2B241F" />
+        <rect x="2" y="40" width="60" height="2" fill="#6B4630" />
       </svg>
     )
   return (
     <svg width={size} height={size} viewBox="0 0 64 48" aria-hidden="true">
-      <rect x="8" y="20" width="44" height="11" rx="2" fill="#3F7F86" />
-      <rect x="40" y="16" width="14" height="6" rx="1" fill="#3F7F86" />
-      <path d="M36 21l2-10" stroke="#2B4F55" strokeWidth="2.5" />
-      <rect x="14" y="10" width="24" height="3" rx="1" fill="#E9DDC3" />
-      <rect x="12" y="14" width="8" height="6" rx="1" fill="#CDB68A" />
-      <rect x="21" y="14" width="8" height="6" rx="1" fill="#BFA676" />
-      <rect x="54" y="25" width="5" height="4" fill="#2B241F" />
-      <circle cx="18" cy="33" r="5.5" fill="#2B241F" />
-      <circle cx="44" cy="33" r="5.5" fill="#2B241F" />
-      <circle cx="18" cy="33" r="2.2" fill="#D9CFBB" />
-      <circle cx="44" cy="33" r="2.2" fill="#D9CFBB" />
+      <rect x="6" y="14" width="50" height="18" rx="4" fill="#F4F1EA" />
+      <rect x="6" y="25" width="50" height="3" fill="#2F6B9A" />
+      <rect x="6" y="28" width="50" height="2" fill="#C8412B" />
+      <rect x="10" y="17" width="38" height="6" rx="1" fill="#3A4B5A" />
+      <rect x="49" y="17" width="6" height="7" rx="1" fill="#3A4B5A" />
+      <rect x="16" y="9" width="22" height="4" rx="1" fill="#3A2418" />
+      <rect x="18" y="5" width="8" height="4" rx="1" fill="#E2A43A" />
+      <rect x="28" y="6" width="6" height="3" rx="1" fill="#3E7A4A" />
+      <circle cx="17" cy="33" r="5" fill="#2B241F" />
+      <circle cx="45" cy="33" r="5" fill="#2B241F" />
+      <circle cx="17" cy="33" r="2" fill="#D9CFBB" />
+      <circle cx="45" cy="33" r="2" fill="#D9CFBB" />
     </svg>
   )
 }
 
+/** KUNTUR mark: Andean peaks under a gliding condor. */
 export function Mark({ size = 28 }: P) {
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true">
-      <path d="M6 48 L24 20 L33 32 L40 23 L58 48 Z" fill="currentColor" />
-      <ellipse cx="32" cy="43" rx="7.5" ry="10.5" transform="rotate(-25 32 43)" fill="var(--cherry)" />
-      <path d="M29 35 C34 40 30 46 35 51" stroke="var(--paper-3)" strokeWidth="2.2" fill="none" />
+      <path d="M4 52 L22 26 L31 38 L40 28 L60 52 Z" fill="currentColor" />
+      <path d="M22 26 L26 32 L22 31 L18 32 Z" fill="var(--paper-3)" opacity=".85" />
+      <path d="M8 20c8-4 14-4 20 2 4-2 8-2 10 0 6-6 12-6 20-2-7 0-12 3-16 7l-4-1-4 1c-6-5-14-8-26-7z" fill="var(--cherry)" />
     </svg>
   )
 }

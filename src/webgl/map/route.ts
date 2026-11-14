@@ -65,7 +65,7 @@ function ribbon(curve: THREE.CatmullRomCurve3, width: number, lift: number, N = 
 
 export function buildRoad(curve: THREE.CatmullRomCurve3) {
   const group = new THREE.Group()
-  const road = ribbon(curve, 1.55, 0.07)
+  const road = ribbon(curve, 1.15, 0.07)
   const roadMat = new THREE.MeshStandardMaterial({
     side: THREE.DoubleSide,
     color: '#D8C29A',
@@ -78,7 +78,7 @@ export function buildRoad(curve: THREE.CatmullRomCurve3) {
   roadMesh.receiveShadow = true
   group.add(roadMesh)
 
-  const line = ribbon(curve, 0.32, 0.12)
+  const line = ribbon(curve, 0.28, 0.12)
   const lineMat = new THREE.ShaderMaterial({
     side: THREE.DoubleSide,
     transparent: true,
@@ -181,11 +181,9 @@ export function pinTexture(stop: Stop, collected: boolean) {
     ctx.lineTo(cx + 42, cy - 28)
     ctx.stroke()
   } else if (detour) {
-    // signpost glyph
-    ctx.fillRect(cx - 5, cy - 46, 10, 92)
-    roundRect(ctx, cx - 44, cy - 40, 80, 28, 6)
-    ctx.fill()
-    roundRect(ctx, cx - 36, cy - 2, 80, 28, 6)
+    // region dot
+    ctx.beginPath()
+    ctx.arc(cx, cy, 30, 0, Math.PI * 2)
     ctx.fill()
   } else {
     ctx.font = '800 118px Barlow, "Centra No2", sans-serif'
@@ -216,7 +214,7 @@ export function buildMarkers() {
     const mat = new THREE.SpriteMaterial({ map: pinTexture(stop, false), transparent: true, depthTest: false, depthWrite: false })
     const sprite = new THREE.Sprite(mat)
     sprite.center.set(0.5, 0)
-    const s = stop.kind === 'stop' ? 4.4 : 3.2
+    const s = stop.kind === 'stop' ? 4.4 : 2.7
     sprite.scale.set(s * 0.8, s, 1)
     const h = heightAt(stop.x, stop.z)
     const base = new THREE.Vector3(stop.x, h + 2.2, stop.z)

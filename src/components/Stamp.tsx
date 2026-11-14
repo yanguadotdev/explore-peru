@@ -13,9 +13,9 @@ export function Stamp({ stop, collected, size = 132 }: { stop: Stop; collected: 
       <circle cx="70" cy="70" r="66" fill="none" stroke="currentColor" strokeWidth={collected ? 3 : 2} strokeDasharray={collected ? undefined : '5 6'} />
       <circle cx="70" cy="70" r="40" fill="none" stroke="currentColor" strokeWidth="2" />
       {collected && (
-        <text fontFamily="var(--sans)" fontSize="10.5" fontWeight="800" letterSpacing="2.2" fill="currentColor">
+        <text fontFamily="var(--sans)" fontSize="9.5" fontWeight="800" letterSpacing="1.1" fill="currentColor">
           <textPath href={`#${id}`}>
-            {`ALTURA · RUTA DEL CAFÉ · ${stop.altitude} MSNM ·`}
+            {`KUNTUR · EXPLORA EL PERÚ · ${stop.name.toUpperCase()} ·`}
           </textPath>
         </text>
       )}

@@ -180,10 +180,19 @@
   top: calc(100% + 10px);
   right: 0;
   width: 340px;
+  /* 25 regions: scroll inside, bar hidden */
+  max-height: min(70vh, 560px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
   padding: 10px;
   background: var(--paper-3);
   border-radius: 18px;
   box-shadow: var(--shadow);
+}
+
+.list::-webkit-scrollbar {
+  display: none;
 }
 
 .list ol {
@@ -213,6 +222,11 @@
   font-size: 20px;
   color: var(--cherry);
   min-width: 28px;
+}
+
+.listNumOff {
+  color: var(--ink-soft);
+  text-align: center;
 }
 
 .listText {

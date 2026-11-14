@@ -2,9 +2,9 @@ import * as THREE from 'three'
 import { STOPS } from '../data/stops'
 import { gsap } from '../lib/ease'
 import type { VehicleId } from '../lib/store'
-import { buildBuildings, buildClouds, buildVegetation } from './map/props'
+import { buildClouds, buildLabels, buildLandmarks, buildVegetation } from './map/props'
 import { buildMarkers, buildRoad, buildRouteCurve, routeSamples2D, type Marker } from './map/route'
-import { buildPaper, buildRiver, buildSkirt, buildTerrain, heightAt } from './map/terrain'
+import { buildPaper, buildSkirt, buildTerrain, buildWater, heightAt } from './map/terrain'
 import { VehicleRig } from './map/vehicles'
 
 // yield to the browser between build steps (setTimeout keeps going in background tabs)
@@ -22,18 +22,21 @@ export class MapScene {
   markers: Marker[] = []
   vehicles!: VehicleRig
   private routeLine!: THREE.ShaderMaterial
-  private river!: THREE.Mesh
+  private waterTime = { value: 0 }
+  /** department highlight on the terrain (hovered pin, else the open one) */
+  private hi = { uHi: { value: -100 }, uHiAmt: { value: 0 } }
+  private selected: string | null = null
   private updateSmoke: (dt: number) => void = () => {}
   private updateClouds: (dt: number) => void = () => {}
 
   // camera rig (desired → current, damped)
   rig = {
-    target: new THREE.Vector3(-1, 4, -7),
-    distance: 162,
-    polar: 0.86,
+    target: new THREE.Vector3(2, 4, 4),
+    distance: 240,
+    polar: 0.8,
     azimuth: 0,
   }
-  private cur = { target: new THREE.Vector3(-1, 4, -7), distance: 230, polar: 0.5, azimuth: -0.25 }
+  private cur = { target: new THREE.Vector3(2, 4, 4), distance: 330, polar: 0.45, azimuth: -0.25 }
   private velocity = new THREE.Vector2()
   private pointer = new THREE.Vector2(-10, -10)
   private pointerNdc = new THREE.Vector2()
@@ -53,28 +56,32 @@ export class MapScene {
     const s = this.scene
     const hemi = new THREE.HemisphereLight('#FFF4DE', '#5F6B3A', 1.25)
     const sun = new THREE.DirectionalLight('#FFE3B5', 2.6)
-    sun.position.set(-48, 70, 42)
+    sun.position.set(-55, 90, 50)
     sun.castShadow = true
-    sun.shadow.mapSize.set(2048, 2048)
+    sun.shadow.mapSize.set(3072, 3072)
     const sc = sun.shadow.camera
-    sc.left = -78
-    sc.right = 78
-    sc.top = 60
-    sc.bottom = -60
+    sc.left = -80
+    sc.right = 80
+    sc.top = 85
+    sc.bottom = -85
     sc.near = 10
-    sc.far = 220
+    sc.far = 320
     sun.shadow.bias = -0.0006
     sun.shadow.normalBias = 0.04
     sun.shadow.radius = 3
     s.add(hemi, sun, sun.target)
 
     s.add(buildPaper())
-    s.add(buildTerrain())
+    const terrain = buildTerrain()
+    this.hi = terrain.uniforms
+    s.add(terrain.mesh)
     progress(0.25)
     await nextFrame()
     s.add(buildSkirt())
-    this.river = buildRiver()
-    s.add(this.river)
+    const water = buildWater()
+    this.waterTime = water.time
+    s.add(water.group)
+    s.add(buildLabels())
     progress(0.35)
     await nextFrame()
 
@@ -89,8 +96,8 @@ export class MapScene {
     progress(0.7)
     await nextFrame()
 
-    const b = buildBuildings(this.uniforms)
-    this.updateSmoke = b.updateSmoke
+    const b = buildLandmarks(this.uniforms)
+    this.updateSmoke = b.update
     s.add(b.group)
     const clouds = buildClouds()
     this.updateClouds = clouds.update
@@ -149,12 +156,12 @@ export class MapScene {
   private onWheel = (e: WheelEvent) => {
     if (!this.interactive) return
     e.preventDefault()
-    this.rig.distance = THREE.MathUtils.clamp(this.rig.distance * (1 + e.deltaY * 0.0011), 40, 200)
+    this.rig.distance = THREE.MathUtils.clamp(this.rig.distance * (1 + e.deltaY * 0.0011), 40, 290)
   }
 
   private clampTarget() {
-    this.rig.target.x = THREE.MathUtils.clamp(this.rig.target.x, -48, 48)
-    this.rig.target.z = THREE.MathUtils.clamp(this.rig.target.z, -30, 30)
+    this.rig.target.x = THREE.MathUtils.clamp(this.rig.target.x, -40, 40)
+    this.rig.target.z = THREE.MathUtils.clamp(this.rig.target.z, -56, 56)
   }
 
   /** Intro: the route draws itself while the camera settles into place. */
@@ -180,7 +187,7 @@ export class MapScene {
         this.flying = false
       },
     })
-    gsap.to(this.rig, { distance: 46, polar: 0.92, duration: 1.6, ease: 'alt.inOut' })
+    gsap.to(this.rig, { distance: 54, polar: 0.92, duration: 1.6, ease: 'alt.inOut' })
   }
 
   /** Jump the damped camera straight to its target pose. */
@@ -192,8 +199,21 @@ export class MapScene {
   }
 
   zoomOut() {
-    gsap.to(this.rig, { distance: 162, polar: 0.86, duration: 1.4, ease: 'alt.inOut' })
+    gsap.to(this.rig, { distance: 240, polar: 0.8, duration: 1.4, ease: 'alt.inOut' })
     gsap.to(this.rig.target, { y: 4, duration: 1.4, ease: 'alt.inOut' })
+  }
+
+  /** Keep the open region highlighted on the terrain (null clears it). */
+  setSelected(id: string | null) {
+    this.selected = id
+    this.refreshHighlight()
+  }
+
+  private refreshHighlight() {
+    const id = this.hovered?.stop.id ?? this.selected
+    const idx = id ? STOPS.findIndex((s) => s.id === id) : -1
+    if (idx >= 0) this.hi.uHi.value = idx
+    gsap.to(this.hi.uHiAmt, { value: idx >= 0 ? 1 : 0, duration: 0.35, ease: 'alt.out', overwrite: true })
   }
 
   setCollected(ids: string[]) {
@@ -240,12 +260,13 @@ export class MapScene {
       this.hovered = hit
       this.dom.style.cursor = hit ? 'pointer' : 'grab'
       this.events.onHover(hit ? hit.stop.id : null)
+      this.refreshHighlight()
     }
   }
 
   update(t: number, dt: number) {
     this.uniforms.uTime.value = t
-    ;(this.river.material as THREE.ShaderMaterial).uniforms.uTime.value = t
+    this.waterTime.value = t
     this.routeLine.uniforms.uTime.value = t
 
     // inertia after drag release
@@ -275,7 +296,7 @@ export class MapScene {
     for (const m of this.markers) {
       const isHover = this.hovered === m
       m.hover += ((isHover ? 1 : 0) - m.hover) * (1 - Math.exp(-dt * 10))
-      const base = m.stop.kind === 'stop' ? 4.4 : 3.2
+      const base = m.stop.kind === 'stop' ? 4.4 : 2.7
       const sc = base * (1 + m.hover * 0.22)
       m.sprite.scale.set(sc * 0.8, sc, 1)
       m.sprite.position.y = m.base.y + Math.sin(t * 2 + m.base.x) * 0.18 + m.hover * 0.4
