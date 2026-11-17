@@ -155,3 +155,21 @@ a:focus-visible {
     animation-duration: 0.01ms !important;
   }
 }
+
+/* Peru flag mark: a gentle flutter, anchored at the hoist (left) edge */
+.peru-flag {
+  flex: none;
+  transform-origin: 0% 50%;
+  animation: flagFlutter 3.2s ease-in-out infinite;
+  filter: drop-shadow(0 1px 2px rgba(42, 23, 14, 0.25));
+}
+
+@keyframes flagFlutter {
+  0%,
+  100% {
+    transform: skewY(0deg) scaleX(1);
+  }
+  50% {
+    transform: skewY(-2.5deg) scaleX(0.97);
+  }
+}

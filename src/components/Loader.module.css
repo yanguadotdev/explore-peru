@@ -31,6 +31,10 @@
   align-items: center;
 }
 
+.flag {
+  margin-bottom: 14px;
+}
+
 .counter {
   font-family: var(--num);
   font-weight: 800;

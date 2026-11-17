@@ -795,7 +795,10 @@ function StampsModal() {
         <button className={s.modalClose} aria-label="Cerrar" onClick={() => store.set({ stampsOpen: false })}>
           <Close />
         </button>
-        <span className={s.modalKicker}>Pasaporte viajero</span>
+        <span className={s.modalKicker}>
+          <Mark size={14} />
+          Pasaporte viajero
+        </span>
         <h2 className={s.modalTitle}>
           {all ? (
             <>

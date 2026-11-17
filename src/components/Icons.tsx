@@ -1,4 +1,4 @@
-import type { JSX } from 'react'
+import { useId, type JSX } from 'react'
 import type { IconKey } from '../data/stops'
 import type { VehicleId } from '../lib/store'
 
@@ -225,13 +225,36 @@ export function VehicleIcon({ id, size = 56 }: P & { id: VehicleId }) {
   )
 }
 
-/** KUNTUR mark: Andean peaks under a gliding condor. */
-export function Mark({ size = 28 }: P) {
+/**
+ * Brand mark: the flag of Peru (red · white · red), drawn waving with soft
+ * fold shading. `size` is the flag height; width follows the 3:2 ratio.
+ */
+export function Mark({ size = 28, className }: P) {
+  const w = Math.round(size * 1.5)
+  // unique ids: a shared id would resolve to the first copy (e.g. inside the hidden hero)
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '')
+  const clip = `flag-wave-${uid}`
+  const folds = `flag-folds-${uid}`
   return (
-    <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true">
-      <path d="M4 52 L22 26 L31 38 L40 28 L60 52 Z" fill="currentColor" />
-      <path d="M22 26 L26 32 L22 31 L18 32 Z" fill="var(--paper-3)" opacity=".85" />
-      <path d="M8 20c8-4 14-4 20 2 4-2 8-2 10 0 6-6 12-6 20-2-7 0-12 3-16 7l-4-1-4 1c-6-5-14-8-26-7z" fill="var(--cherry)" />
+    <svg width={w} height={size} viewBox="0 0 60 40" className={`peru-flag ${className ?? ''}`} aria-hidden="true">
+      <defs>
+        <clipPath id={clip}>
+          <path d="M2 4 C14 1 22 7 32 4 S50 1 58 4 V36 C50 33 42 39 32 36 S14 33 2 36 Z" />
+        </clipPath>
+        <linearGradient id={folds} x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stopColor="#000" stopOpacity=".18" />
+          <stop offset=".22" stopColor="#fff" stopOpacity=".16" />
+          <stop offset=".45" stopColor="#000" stopOpacity=".12" />
+          <stop offset=".7" stopColor="#fff" stopOpacity=".14" />
+          <stop offset="1" stopColor="#000" stopOpacity=".16" />
+        </linearGradient>
+      </defs>
+      <g clipPath={`url(#${clip})`}>
+        <rect x="0" y="0" width="20.5" height="40" fill="#D91023" />
+        <rect x="20" y="0" width="20.5" height="40" fill="#FFFFFF" />
+        <rect x="40" y="0" width="20" height="40" fill="#D91023" />
+        <rect x="0" y="0" width="60" height="40" fill={`url(#${folds})`} />
+      </g>
     </svg>
   )
 }

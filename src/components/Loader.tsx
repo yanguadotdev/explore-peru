@@ -3,6 +3,7 @@ import { FACTS } from '../data/stops'
 import { gsap } from '../lib/ease'
 import { useStore } from '../lib/store'
 import { LoaderOverlay } from '../webgl/LoaderOverlay'
+import { Mark } from './Icons'
 import s from './Loader.module.css'
 
 const PATH =
@@ -118,6 +119,7 @@ export function Loader({ onRevealStart, onDone }: Props) {
 
       <div className={s.center}>
         <div className={s.counterRow} ref={counterRow}>
+          <Mark size={22} className={s.flag} />
           <div className={s.counter} role="progressbar" aria-label="Cargando la experiencia" aria-valuemin={0} aria-valuemax={100} aria-valuenow={count}>
             <span aria-hidden="true">{count}</span>
           </div>
