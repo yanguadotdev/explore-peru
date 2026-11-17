@@ -203,7 +203,8 @@ export function RegionPage() {
     if (!regionId || !sc || !ct) return
     const stop = STOPS.find((x) => x.id === regionId)!
     sc.scrollTop = 0
-    const l = new Lenis({ wrapper: sc, content: ct, lerp: 0.1, smoothWheel: true })
+    // smooth, inertial wheel scrolling inside the page (Lenis drives the wrapper's scrollTop)
+    const l = new Lenis({ wrapper: sc, content: ct, lerp: 0.075, wheelMultiplier: 0.9, touchMultiplier: 1.4, smoothWheel: true })
     lenis.current = l
     l.on('scroll', ScrollTrigger.update)
     const raf = (t: number) => l.raf(t * 1000)
@@ -358,7 +359,7 @@ export function RegionPage() {
   return (
     <div className={s.root} ref={root} style={{ visibility: 'hidden' }} aria-hidden={!stop} role="dialog" aria-label={stop ? `Región ${stop.name}` : undefined}>
       <div className={s.page}>
-        <div className={s.scroller} ref={scroller} data-lenis-prevent>
+        <div className={s.scroller} ref={scroller} data-scroller>
           <div ref={content}>{stop && <RegionContent key={stop.id} stop={stop} lenis={lenis} />}</div>
         </div>
       </div>
