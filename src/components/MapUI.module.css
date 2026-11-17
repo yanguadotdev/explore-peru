@@ -276,22 +276,52 @@
   overflow: hidden;
 }
 
+/* photo bleeds to the card's top, bottom and left edges: always full height */
 .onboardThumb {
   position: relative;
   flex: none;
-  width: 76px;
-  height: 76px;
-  border-radius: 12px;
+  align-self: stretch;
+  width: 104px;
+  min-height: 96px;
+  margin: -12px 0 -12px -12px;
+  border-radius: 18px 0 0 18px;
   display: grid;
   place-items: center;
   color: var(--paper-3);
-  background:
-    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.18), transparent 60%),
-    linear-gradient(160deg, #4e7a46, #2f5a33);
+  background: #2f5a33;
   overflow: hidden;
 }
 
+.onboardPhoto {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transform: scale(1.12);
+  transition:
+    opacity 0.6s var(--alt-out),
+    transform 1.6s var(--alt-out);
+}
+
+.onboardPhotoOn {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* keep the progress bar legible over the photo */
+.onboardThumb::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 40%;
+  background: linear-gradient(to top, rgba(20, 12, 6, 0.55), transparent);
+  pointer-events: none;
+}
+
 .onboardBar {
+  z-index: 1;
   position: absolute;
   left: 8px;
   right: 8px;

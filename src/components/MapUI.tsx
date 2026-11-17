@@ -184,9 +184,10 @@ function StopsList() {
 // ------------------------------------------------------------------ onboarding
 
 const STEPS = [
-  { title: 'Recorre el Perú', body: 'Arrastra el mapa y usa la rueda para acercarte a los Andes, la costa y la selva.', icon: 'compass' as const },
-  { title: 'Explora las regiones', body: 'Haz clic en los pines para descubrir los 25 departamentos y sus curiosidades.', icon: 'machu' as const },
-  { title: 'Colecciona sellos', body: 'Visita las 8 paradas de la ruta para completar tu pasaporte viajero.', icon: 'flag' as const },
+  // photos: Unsplash (see README for credits)
+  { title: 'Recorre el Perú', body: 'Arrastra el mapa y usa la rueda para acercarte a los Andes, la costa y la selva.', photo: 'vinicunca.jpg', alt: 'Montaña de Siete Colores, Cusco' },
+  { title: 'Explora las regiones', body: 'Haz clic en los pines para descubrir los 25 departamentos y sus curiosidades.', photo: 'huacachina.jpg', alt: 'Oasis de Huacachina, Ica' },
+  { title: 'Colecciona sellos', body: 'Visita las 8 paradas de la ruta para completar tu pasaporte viajero.', photo: 'llama.jpg', alt: 'Llama en los Andes' },
 ]
 
 function Onboarding() {
@@ -249,7 +250,16 @@ function Onboarding() {
   return (
     <div className={s.onboard} data-anim="bl" ref={card}>
       <div className={s.onboardThumb}>
-        <StopIcon icon={st.icon} size={36} />
+        {/* all photos stacked; the active one cross-fades in */}
+        {STEPS.map((p, i) => (
+          <img
+            key={p.photo}
+            src={`${import.meta.env.BASE_URL}onboarding/${p.photo}`}
+            alt={i === step ? p.alt : ''}
+            className={`${s.onboardPhoto} ${i === step ? s.onboardPhotoOn : ''}`}
+            draggable={false}
+          />
+        ))}
         <span className={s.onboardBar}>
           <span ref={bar} />
         </span>
