@@ -48,6 +48,7 @@ La geografía está simplificada a mano: es un mapa ilustrado, no cartografía e
 | Capa | Tecnología |
 | --- | --- |
 | UI | React 19 + CSS Modules |
+| Rutas | React Router 7 (SPA) |
 | 3D | Three.js (shaders propios, `InstancedMesh`, sombras, render targets) |
 | Animación | GSAP (timelines + `CustomEase` propios) |
 | Scroll | Lenis (panel de cada región) |
@@ -63,8 +64,21 @@ pnpm build      # type-check + build de producción en dist/
 pnpm audio      # regenera los WAV de public/audio
 ```
 
-Atajos de desarrollo (solo en `dev`): `http://localhost:5178/?map` salta directo al mapa y
-`?map&region=cusco` abre además la página de una región.
+## Rutas (SPA con React Router)
+
+| Ruta | Contenido |
+| --- | --- |
+| `/` | Loader → hero → mapa 3D |
+| `/regions/:regionId` | Página de la región sobre el mapa (p. ej. `/regions/cajamarca`) |
+
+La URL y la página abierta están sincronizadas: los pines, la lista de regiones, anterior/siguiente
+y "Volver al mapa" cambian la URL, y los botones atrás/adelante del navegador abren o cierran
+páginas. Un enlace directo a una región pasa por el loader y salta el hero. Una región que no
+existe redirige a `/`. Al publicar, el hosting debe servir `index.html` para cualquier ruta
+(fallback de SPA; `vite preview` ya lo hace).
+
+Atajo de desarrollo (solo en `dev`): añade `?map` para saltar el loader, p. ej.
+`http://localhost:5178/?map` o `http://localhost:5178/regions/cusco?map`.
 
 El fondo del hero se elige en `src/webgl/Experience.ts` (`HERO_BACKGROUND`). Si la foto no carga,
 se usa la escena 3D de montañas.
