@@ -7,7 +7,7 @@ import { audio } from '../lib/audio'
 import { gsap } from '../lib/ease'
 import { getExperience } from '../lib/experience'
 import { store, useStore } from '../lib/store'
-import { PERU } from '../webgl/map/peru'
+import { LiquidFill } from '../webgl/LiquidFill'
 import { LoaderOverlay } from '../webgl/LoaderOverlay'
 import { Arrow, Close, Mark, StopIcon, VehicleIcon } from './Icons'
 import { Stamp } from './Stamp'
@@ -18,16 +18,16 @@ gsap.registerPlugin(ScrollTrigger)
 /*
   Region page — replaces the old side panel. Mirrors the Route 66 state pages:
   paper loader with a counter → burn dissolve into a full-bleed hero → on scroll
-  the hero folds away like a postcard, a giant headline rises, a torn brown
-  sheet sweeps up with floating photos, an "about" spread with a mini map, a
-  story card that grows to full screen into a slider, nearby detours and a
+  the hero folds away like a postcard, a giant headline rises word by word, a
+  brown "liquid" fill with an organic noise edge floods the screen (IronHill
+  technique) and the headline reappears in cream among floating photos, a story card that grows to full screen into a slider, nearby detours and a
   tilted card that leads to the next region.
 */
 
-const STAGE_COPY: Record<Stop['stage'], { about: string; label: string }> = {
-  Costa: { about: 'Desierto, mar y civilizaciones de barro', label: 'Región de la Costa' },
-  Sierra: { about: 'Montañas, valles y piedra tallada', label: 'Región de los Andes' },
-  Selva: { about: 'Ríos inmensos y bosque sin fin', label: 'Región de la Amazonía' },
+const STAGE_COPY: Record<Stop['stage'], { label: string }> = {
+  Costa: { label: 'Región de la Costa' },
+  Sierra: { label: 'Región de los Andes' },
+  Selva: { label: 'Región de la Amazonía' },
 }
 
 const fmt = (n: number) => n.toLocaleString('es')
@@ -70,29 +70,6 @@ function Torn({ seed, className }: { seed: number; className?: string }) {
   )
 }
 
-const BOUNDS = (() => {
-  const xs = PERU.map((p) => p.x)
-  const zs = PERU.map((p) => p.y)
-  return { x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) }
-})()
-const PERU_D = 'M' + PERU.map((p) => `${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(' L') + ' Z'
-
-function MiniMap({ stop }: { stop: Stop }) {
-  const pad = 3
-  const vb = `${BOUNDS.x0 - pad} ${BOUNDS.z0 - pad} ${BOUNDS.x1 - BOUNDS.x0 + pad * 2} ${BOUNDS.z1 - BOUNDS.z0 + pad * 2}`
-  return (
-    <svg className={s.miniMap} viewBox={vb} aria-hidden="true">
-      <path d={PERU_D} className={s.miniFill} />
-      <path d={PERU_D} className={s.miniLine} pathLength={1} data-draw />
-      {STOPS.map((o) => (
-        <circle key={o.id} cx={o.x} cy={o.z} r={o.id === stop.id ? 0 : 0.7} className={s.miniDot} />
-      ))}
-      <circle cx={stop.x} cy={stop.z} r={4.5} className={s.miniPulse} data-pulse />
-      <circle cx={stop.x} cy={stop.z} r={2} className={s.miniHere} data-here />
-    </svg>
-  )
-}
-
 const near = (stop: Stop, n: number) =>
   STOPS.filter((o) => o.id !== stop.id)
     .map((o) => ({ o, d: Math.hypot(o.x - stop.x, o.z - stop.z) }))
@@ -127,11 +104,25 @@ function Words({ text, className }: { text: string; className?: string }) {
   )
 }
 
+/** Plain word spans for scroll-scrubbed, word-by-word opacity reveals. */
+function FadeWords({ text }: { text: string }) {
+  const words = text.split(' ')
+  return (
+    <>
+      {words.map((w, i) => (
+        <span key={i} data-fw>
+          {w}
+          {i < words.length - 1 ? ' ' : ''}
+        </span>
+      ))}
+    </>
+  )
+}
+
 // ------------------------------------------------------------------ page
 
 const SECTIONS = [
   { id: 'welcome', label: 'Bienvenida' },
-  { id: 'about', label: 'Sobre' },
   { id: 'stories', label: 'Historias' },
   { id: 'detours', label: 'Desvíos' },
 ] as const
@@ -253,6 +244,7 @@ export function RegionPage() {
     const raf = (t: number) => l.raf(t * 1000)
     gsap.ticker.add(raf)
 
+    let liquidRef: LiquidFill | null = null
     const ctx = gsap.context(() => {
       const q = gsap.utils.selector(ct)
       const vh = () => window.innerHeight
@@ -292,32 +284,31 @@ export function RegionPage() {
       // already revealed (e.g. a re-render) → jump to the end state
       if (gsap.getProperty(q('[data-hero-title] [data-char]')[0], 'yPercent') === 0) it.progress(1)
 
-      // ---- stage: hero → postcard → headline → torn brown sheet + photos
+      // ---- stage: hero → postcard → headline (word by word) → liquid brown fill → photos
       const stage = q('[data-stage]')[0]
+      const liquid = new LiquidFill(q('[data-liquid]')[0] as HTMLCanvasElement, '#7a4a2e')
+      liquidRef = liquid
+      const fill = { p: 0 }
       const st = gsap.timeline({ defaults: { ease: 'none' }, scrollTrigger: { trigger: stage, scroller: sc, start: 'top top', end: 'bottom bottom', scrub: 0.6 } })
       st.to(q('[data-hero]'), { scale: 0.62, rotate: -5, yPercent: -18, borderRadius: 18, duration: 0.7 }, 0)
         .to(q('[data-hero]'), { yPercent: -120, rotate: -9, duration: 0.6, ease: 'power1.in' }, 0.55)
         .to(q('[data-hero-ui]'), { autoAlpha: 0, duration: 0.3 }, 0)
         .fromTo(q('[data-cream-head]'), { y: () => vh() * 0.6 }, { y: 0, duration: 0.9, ease: 'power2.out' }, 0.25)
-        .fromTo(q('[data-brown]'), { yPercent: 100, y: 100 }, { yPercent: -4, y: 0, duration: 1.1, ease: 'power1.inOut' }, 1.25)
-        .fromTo(q('[data-brown-inner]'), { yPercent: -100, y: -100 }, { yPercent: 4, y: 0, duration: 1.1, ease: 'power1.inOut' }, 1.25)
+        // cream headline: each word fades in as you scroll
+        .fromTo(q('[data-cream-head] [data-fw]'), { opacity: 0.08 }, { opacity: 1, duration: 0.12, stagger: { amount: 0.6 } }, 0.45)
+        .fromTo(q('[data-cream-head] [data-kick]'), { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.2 }, 0.4)
+        // the brown fill rises from the bottom behind a noisy, liquid edge
+        .to(fill, { p: 1.3, duration: 1, ease: 'power1.inOut', onUpdate: () => (liquid.progress = fill.p) }, 1.25)
+        .set(q('[data-cream-head]'), { autoAlpha: 0 }, 2.25)
+        // then the cream headline is written again, word by word, on the brown
+        .fromTo(q('[data-brown] [data-kick]'), { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.2 }, 2.05)
+        .fromTo(q('[data-brown] [data-fw]'), { opacity: 0 }, { opacity: 1, duration: 0.12, stagger: { amount: 0.6 } }, 2.1)
       q('[data-float]').forEach((f, i) => {
         const speed = [1, 1.5, 0.8, 1.25, 1.1][i % 5]
-        st.fromTo(f, { y: () => vh() * 0.45 * speed, rotate: (i % 2 ? 6 : -6) }, { y: () => -vh() * 0.38 * speed, rotate: i % 2 ? -3 : 3, duration: 2.2 }, 1.2)
+        st.fromTo(f, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.15 }, 1.95 + i * 0.06)
+          .fromTo(f, { y: () => vh() * 0.45 * speed, rotate: (i % 2 ? 6 : -6) }, { y: () => -vh() * 0.38 * speed, rotate: i % 2 ? -3 : 3, duration: 1.7 }, 1.95)
       })
-      st.fromTo(q('[data-icon-float]'), { y: () => vh() * 0.7, rotate: -10 }, { y: () => -vh() * 0.2, rotate: 6, duration: 2.2 }, 1.3)
-
-      // ---- about
-      const about = q('[data-about]')[0]
-      const alt = { v: 0 }
-      const altEl = q('[data-alt]')[0]
-      gsap.timeline({ scrollTrigger: { trigger: about, scroller: sc, start: 'top 70%' }, defaults: { ease: 'alt.out' } })
-        .fromTo(q('[data-about] [data-draw]'), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 2, ease: 'alt.inOut' }, 0)
-        .fromTo(q('[data-about] [data-here]'), { scale: 0, transformOrigin: '50% 50%' }, { scale: 1, duration: 0.6, ease: 'back.out(3)' }, 1.1)
-        .fromTo(q('[data-about] [data-list] li'), { autoAlpha: 0, x: -16 }, { autoAlpha: 1, x: 0, duration: 0.6, stagger: 0.08 }, 0.3)
-        .fromTo(q('[data-about] [data-word]'), { yPercent: 110 }, { yPercent: 0, duration: 0.9, stagger: 0.04 }, 0.2)
-        .fromTo(q('[data-about] [data-fade]'), { autoAlpha: 0, y: 22 }, { autoAlpha: 1, y: 0, duration: 0.8, stagger: 0.1 }, 0.5)
-        .to(alt, { v: stop.altitude, duration: 1.8, ease: 'power2.out', onUpdate: () => altEl && (altEl.textContent = fmt(Math.round(alt.v))) }, 0.4)
+      st.fromTo(q('[data-icon-float]'), { autoAlpha: 0, y: () => vh() * 0.7, rotate: -10 }, { autoAlpha: 1, y: () => -vh() * 0.2, rotate: 6, duration: 1.7 }, 2.05)
 
       // ---- stories heading
       gsap.fromTo(q('[data-stories-head] [data-word]'), { yPercent: 110 }, {
@@ -383,6 +374,7 @@ export function RegionPage() {
     ScrollTrigger.refresh()
     return () => {
       ctx.revert()
+      liquidRef?.dispose()
       intro.current = null
       gsap.ticker.remove(raf)
       l.destroy()
@@ -430,8 +422,7 @@ function RegionContent({ stop, lenis }: { stop: Stop; lenis: React.RefObject<Len
   const ph = regionPhotos(stop.id)
   const prev = neighbourOf(stop.id, -1)
   const next = neighbourOf(stop.id, 1)
-  const nearby = useMemo(() => near(stop, 4), [stop])
-  const detours = nearby.slice(0, 2)
+  const detours = useMemo(() => near(stop, 2), [stop])
   const copy = STAGE_COPY[stop.stage]
   const titleSize = `min(14vw, ${(80 / (stop.name.length * 0.66)).toFixed(2)}vw)`
   const go = (id: string) => store.set({ openStop: id })
@@ -468,14 +459,16 @@ function RegionContent({ stop, lenis }: { stop: Stop; lenis: React.RefObject<Len
         </button>
       </header>
 
-      {/* ---- stage: hero, cream headline, torn brown sheet */}
+      {/* ---- stage: hero, cream headline, liquid brown fill */}
       <section className={s.stage} data-stage data-sec="welcome">
         <div className={s.sticky}>
           <div className={s.creamHead} data-cream-head>
-            <span className={s.kicker}>
+            <span className={s.kicker} data-kick>
               <Mark size={16} /> Bienvenido <span className="script">a</span> {stop.name}
             </span>
-            <h2 className={s.giant}>{stop.teaser}</h2>
+            <h2 className={s.giant} aria-label={stop.teaser}>
+              <FadeWords text={stop.teaser} />
+            </h2>
           </div>
 
           <div className={s.hero} data-hero>
@@ -532,63 +525,25 @@ function RegionContent({ stop, lenis }: { stop: Stop; lenis: React.RefObject<Len
             </div>
           </div>
 
-          <div className={s.brown} data-brown>
-            <Torn seed={stop.index * 7 + stop.name.length} className={s.tornTop} />
-            <div className={s.brownClip}>
-              <div className={s.brownInner} data-brown-inner>
-                <div className={s.creamHead}>
-                  <span className={`${s.kicker} ${s.kickerLight}`}>
-                    <Mark size={16} /> Bienvenido <span className="script">a</span> {stop.name}
-                  </span>
-                  <h2 className={`${s.giant} ${s.giantLight}`}>{stop.teaser}</h2>
-                </div>
-                {[ph.slides[0], ph.hero, ph.slides[1], ph.slides[2], ph.slides[0]].map((src, i) => (
-                  <figure key={i} className={`${s.float} ${s[`float${i}`]}`} data-float>
-                    <img src={src} alt="" loading="lazy" />
-                  </figure>
-                ))}
-                <span className={s.iconFloat} data-icon-float>
-                  <StopIcon icon={stop.icon} size={150} />
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+          <canvas className={s.liquid} data-liquid aria-hidden="true" />
 
-      {/* ---- about */}
-      <section className={s.about} data-about data-sec="about">
-        <div className={s.aboutMap}>
-          <ol className={s.aboutList} data-list>
-            {[stop, ...nearby.slice(0, 3)].map((o, i) => (
-              <li key={o.id} className={i === 0 ? s.aboutListOn : ''}>
-                <i />
-                {o.name}
-              </li>
+          <div className={s.brown} data-brown>
+            <div className={s.creamHead}>
+              <span className={`${s.kicker} ${s.kickerLight}`} data-kick>
+                <Mark size={16} /> Bienvenido <span className="script">a</span> {stop.name}
+              </span>
+              <h2 className={`${s.giant} ${s.giantLight}`} aria-hidden="true">
+                <FadeWords text={stop.teaser} />
+              </h2>
+            </div>
+            {[ph.slides[0], ph.hero, ph.slides[1], ph.slides[2], ph.slides[0]].map((src, i) => (
+              <figure key={i} className={`${s.float} ${s[`float${i}`]}`} data-float>
+                <img src={src} alt="" loading="lazy" />
+              </figure>
             ))}
-          </ol>
-          <MiniMap stop={stop} />
-          <div className={s.aboutAlt} data-fade>
-            <strong>
-              <span data-alt>0</span> msnm
-            </strong>
-            <span>Altitud de {stop.capital}</span>
-          </div>
-        </div>
-        <div className={s.aboutText}>
-          <span className={`script ${s.aboutScript}`} data-fade>
-            Sobre {stop.name}
-          </span>
-          <h3 className={s.aboutTitle}>
-            <Words text={copy.about} />
-          </h3>
-          <p data-fade>
-            {stop.name} es una región de la {stop.stage.toLowerCase()} peruana. Su capital, {stop.capital}, está a {fmt(stop.altitude)} metros sobre el nivel del mar. {stop.teaser}
-          </p>
-          <p data-fade>{stop.story[0].body}</p>
-          <div className={s.aboutNote} data-fade>
-            <StopIcon icon="compass" size={30} />
-            <span>{stop.note}</span>
+            <span className={s.iconFloat} data-icon-float>
+              <StopIcon icon={stop.icon} size={150} />
+            </span>
           </div>
         </div>
       </section>

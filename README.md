@@ -32,9 +32,10 @@ de portfolio pensada para que viajeros de otros países exploren el mapa y sus c
    un velo de papel se abre desde él con contador y ruta, y se quema revelando la página:
    - Hero a pantalla completa con la foto de la región, título letra a letra, región anterior y
      siguiente, y el sello de la ruta si corresponde.
-   - Al hacer scroll la foto se encoge como una postal, sube un titular gigante y una hoja marrón
-     rasgada lo cubre con fotos flotando en parallax.
-   - "Sobre": mini mapa del Perú con la región, altitud animada y texto.
+   - Al hacer scroll la foto se encoge como una postal, sube un titular gigante que
+     aparece palabra por palabra, y un relleno marrón con borde líquido de ruido (técnica de
+     IronHill, de Codegrid) inunda la pantalla; el titular se vuelve a escribir en crema entre
+     fotos flotando.
    - "Historias del camino": una tarjeta que crece a pantalla completa y se vuelve un slider con
      las tres curiosidades.
    - Desvíos a las regiones vecinas y una tarjeta hacia la siguiente región.

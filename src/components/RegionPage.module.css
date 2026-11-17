@@ -522,35 +522,21 @@
   }
 }
 
-/* torn brown sheet */
+/* liquid brown fill (WebGL) + the content that appears on it */
+
+.liquid {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
 
 .brown {
   position: absolute;
   inset: 0;
-  color: var(--brown);
-  /* positioned by the scroll timeline (yPercent) */
-}
-
-.tornTop {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: -88px;
-  width: 100%;
-  height: 90px;
-  display: block;
-}
-
-.brownClip {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  background: var(--brown);
-}
-
-.brownInner {
-  position: absolute;
-  inset: 0;
+  pointer-events: none;
 }
 
 .float {
@@ -616,171 +602,7 @@
   filter: drop-shadow(0 18px 20px rgba(20, 10, 4, 0.45));
 }
 
-/* ------------------------------------------------------------------ about */
-
-.about {
-  position: relative;
-  background: var(--brown);
-  color: var(--paper);
-  display: grid;
-  grid-template-columns: 1.1fr 1fr;
-  gap: 6vw;
-  align-items: center;
-  padding: 16vh 8vw 22vh;
-  min-height: 100vh;
-}
-
-.aboutMap {
-  position: relative;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: 3vw;
-}
-
-.aboutList {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 22px;
-  font-family: var(--wide);
-  font-size: 9.5px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.aboutList li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  opacity: 0.7;
-}
-
-.aboutList i {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-}
-
-.aboutListOn {
-  opacity: 1 !important;
-  color: var(--accent);
-}
-
-.aboutListOn i {
-  width: 10px;
-  height: 10px;
-  box-shadow: 0 0 0 4px rgba(242, 182, 63, 0.25);
-}
-
-.miniMap {
-  width: 100%;
-  max-height: 62vh;
-  overflow: visible;
-}
-
-.miniFill {
-  fill: rgba(251, 247, 238, 0.07);
-}
-
-.miniLine {
-  fill: none;
-  stroke: var(--accent);
-  stroke-width: 0.55;
-  stroke-linejoin: round;
-  stroke-dasharray: 1;
-}
-
-.miniDot {
-  fill: rgba(251, 247, 238, 0.45);
-}
-
-.miniHere {
-  fill: var(--accent);
-  stroke: var(--brown);
-  stroke-width: 0.6;
-}
-
-.miniPulse {
-  fill: none;
-  stroke: var(--accent);
-  stroke-width: 0.4;
-  transform-box: fill-box;
-  transform-origin: 50% 50%;
-  animation: pulse 2.2s infinite var(--alt-out);
-}
-
-@keyframes pulse {
-  from {
-    transform: scale(0.4);
-    opacity: 1;
-  }
-  to {
-    transform: scale(1.8);
-    opacity: 0;
-  }
-}
-
-.aboutAlt {
-  grid-column: 1 / -1;
-  display: grid;
-  gap: 4px;
-}
-
-.aboutAlt strong {
-  font-family: var(--num);
-  font-size: 30px;
-  line-height: 1;
-  text-transform: uppercase;
-}
-
-.aboutAlt > span {
-  font-family: var(--wide);
-  font-size: 9px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  opacity: 0.7;
-}
-
-.aboutText {
-  max-width: 520px;
-}
-
-.aboutText p {
-  font-size: 15px;
-  line-height: 1.6;
-  opacity: 0.9;
-  margin: 0 0 16px;
-}
-
-.aboutScript {
-  font-size: 34px;
-  color: var(--accent);
-}
-
-.aboutTitle {
-  margin: 6px 0 22px;
-  font-weight: 900;
-  font-size: clamp(30px, 3.2vw, 50px);
-  line-height: 0.95;
-  letter-spacing: -0.03em;
-  text-transform: uppercase;
-}
-
-.aboutNote {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-top: 26px;
-  padding: 14px 18px;
-  border-radius: 16px;
-  border: 1.5px dashed rgba(251, 247, 238, 0.4);
-  font-weight: 700;
-  font-size: 14px;
-  line-height: 1.35;
-}
+/* ------------------------------------------------------------------ text reveals */
 
 .wordMask {
   display: inline-block;
@@ -1296,11 +1118,6 @@
 
   .heroStamp {
     margin: -150px 0 0 20px;
-  }
-
-  .about {
-    grid-template-columns: 1fr;
-    padding: 12vh 24px 18vh;
   }
 
   .detour {
