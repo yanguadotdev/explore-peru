@@ -27,12 +27,13 @@
   scrollbar-color: rgba(58, 36, 24, 0.35) transparent;
 }
 
-.burn {
+/* patterned paper of the region loader (LoaderOverlay canvas), under its content */
+.veil {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  z-index: 5;
+  z-index: 0;
   pointer-events: none;
 }
 
@@ -48,14 +49,20 @@
 }
 
 .loaderCenter {
+  position: relative;
+  z-index: 1;
   display: grid;
   justify-items: center;
-  gap: 6px;
-  transform: translateY(-4vh);
+  gap: 4px;
+  transform: translateY(-6vh);
 }
 
-.loaderVehicle {
-  filter: drop-shadow(0 14px 10px rgba(58, 36, 24, 0.25));
+/* 11-frame sprite atlas (public/van-atlas.webp, 4 x 3 frames) */
+.loaderVan {
+  width: clamp(150px, 16vw, 220px);
+  aspect-ratio: 1;
+  margin-bottom: -18px;
+  background: url('/van-atlas.webp') 0 0 / 400% 300% no-repeat;
 }
 
 .loaderCount {
@@ -86,27 +93,33 @@
 
 .loaderRoute {
   position: absolute;
-  bottom: 9vh;
+  z-index: 1;
+  bottom: 8vh;
   left: 50%;
-  width: min(560px, 80vw);
+  width: min(510px, 80vw);
+  height: auto;
+  aspect-ratio: 510 / 148;
   transform: translateX(-50%);
   overflow: visible;
   color: var(--ink);
 }
 
-.loaderRoute circle {
+.routeBase,
+.routeLine {
   fill: none;
   stroke: currentColor;
-  stroke-width: 2;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
 }
 
-.loaderPath {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  opacity: 0.7;
+.routeBase {
+  stroke-width: 1.5;
+  stroke-dasharray: 2 6;
+  opacity: 0.45;
+}
+
+.routeLine {
+  stroke-width: 2.5;
 }
 
 /* ------------------------------------------------------------------ header */

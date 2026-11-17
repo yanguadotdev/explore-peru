@@ -10,7 +10,7 @@ import { store, useStore } from '../lib/store'
 import { LiquidFill } from '../webgl/LiquidFill'
 import { LiquidSlider } from '../webgl/LiquidSlider'
 import { LoaderOverlay } from '../webgl/LoaderOverlay'
-import { Arrow, Close, Mark, VehicleIcon } from './Icons'
+import { Arrow, Close, Mark } from './Icons'
 import { Stamp } from './Stamp'
 import s from './RegionPage.module.css'
 
@@ -86,6 +86,10 @@ function FadeWords({ text }: { text: string }) {
 
 // ------------------------------------------------------------------ page
 
+/** Loader route: a hand-drawn road (viewBox 510 × 148). */
+const ROUTE_D =
+  'M.233 146.084c3.233.776 10.81.282 15.257-7.894 5.558-10.22 11.736-10.808 14.156-10.829s12.955 5.777 22.332 1.949 10.174-4.906 13.666-5.204 3.99-5.12 5.59-6.473c1.602-1.352 4.55-2.448 9.679-.083 5.128 2.365 16.686 1.997 22.851-.197s9.965 2.055 14.809 2.549 8.334-.072 11.56-.1c3.226-.027 3.235 1.043 5.926 1.288 2.69.244 6.167-1.927 8.299-4.087s5.094-1.65 8.32-1.678 8.019-5.423 11.24-5.986 7.25-1.133 9.115-3.023 4.276-2.981 8.872-.077c4.595 2.905 9.988 4.733 16.413 1.465 6.424-3.267 10.415-8.12 18.246-4.172s5.703 6.642 15.101 5.223 8.324-1.142 11.567.703c3.242 1.846 8.072.734 11.291-.097s12.067-3.584 15.036-2.271 7.796-.067 9.664-1.69c1.495-1.297 4.387-.573 5.646-.048 5.304 1.917 18.595 5.14 29.328 2.691 13.417-3.06 11.519-4.917 12.307-7.065s4.253-5.658 6.132-5.942c1.504-.227 3.661-1.549 4.552-2.181l4.301-.037c2.591-1.004 8.473-2.643 11.282-1.168s14.713-8.604 20.314-13.827c2.134-1.981 8.172-6.388 15.254-8.162 8.854-2.218 19.042-5.518 21.357-17.584 2.316-12.065 12.905-31.162 20.394-35.777s7.787-1.138 9.4-1.152 2.679-1.094 5.376-.046c2.698 1.047 23.472 9.434 26.402 6.197 2.929-3.238 5.071-4.327 8.287-5.426 3.217-1.098 4.049 1.84 10.154-7.314 4.884-7.324 14.897-7.98 19.294-7.394'
+
 const SECTIONS = [
   { id: 'welcome', label: 'Bienvenida' },
   { id: 'stories', label: 'Historias' },
@@ -94,12 +98,13 @@ const SECTIONS = [
 
 export function RegionPage() {
   const openId = useStore((st) => st.openStop)
-  const vehicle = useStore((st) => st.vehicle)
   const [regionId, setRegionId] = useState<string | null>(null)
   const [loaderId, setLoaderId] = useState<string | null>(null)
   const root = useRef<HTMLDivElement>(null)
   const loader = useRef<HTMLDivElement>(null)
   const counter = useRef<HTMLSpanElement>(null)
+  const veil = useRef<{ overlay: LoaderOverlay; canvas: HTMLCanvasElement } | null>(null)
+  const vanTween = useRef<gsap.core.Tween | null>(null)
   const scroller = useRef<HTMLDivElement>(null)
   const content = useRef<HTMLDivElement>(null)
   const lenis = useRef<Lenis | null>(null)
@@ -134,8 +139,15 @@ export function RegionPage() {
       const ready = decode(hero)
       const count = { v: 0 }
       gsap.set(el, { autoAlpha: 1, yPercent: 0, rotate: 0, scale: 1, borderRadius: 0 })
-      gsap.set(ld, { autoAlpha: 1, clipPath: `circle(0% at ${o.x}px ${o.y}px)` })
+      gsap.set(ld, { autoAlpha: 1, backgroundColor: 'var(--paper)', clipPath: `circle(0% at ${o.x}px ${o.y}px)` })
+      gsap.set(ld.querySelectorAll('[data-ld], [data-route-svg]'), { autoAlpha: 1 })
       if (counter.current) counter.current.textContent = '0'
+      startVeil()
+      startVan()
+      const reveal = ld.querySelector('[data-route-reveal]')
+      const progress = ld.querySelector('[data-route-progress]')
+      // both clip rects grow from the right edge, so the road loads right → left
+      gsap.set([reveal, progress], { attr: { x: 510, width: 0 } })
 
       const tl = gsap.timeline()
       seq.current = tl
@@ -147,15 +159,17 @@ export function RegionPage() {
           lenis.current?.scrollTo(0, { immediate: true })
         })
         .fromTo(ld.querySelectorAll('[data-ld]'), { autoAlpha: 0, y: 24 }, { autoAlpha: 1, y: 0, duration: 0.7, stagger: 0.08, ease: 'alt.out' }, '<-0.35')
-        .fromTo(ld.querySelector('[data-route]'), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 2, ease: 'alt.inOut' }, '<')
+        // the dashed route draws in, then the solid line follows the counter
+        .to(reveal, { attr: { x: 0, width: 510 }, duration: 1.1, ease: 'alt.inOut' }, '<')
         .to(count, {
           v: 100,
           duration: 1.9,
           ease: 'power2.inOut',
           onUpdate: () => {
             if (counter.current) counter.current.textContent = String(Math.round(count.v))
+            gsap.set(progress, { attr: { x: 510 - (510 * count.v) / 100, width: (510 * count.v) / 100 } })
           },
-        }, '<')
+        }, '<0.2')
         .add(() => {
           tl.pause()
           ready.then(() => tl.play())
@@ -164,6 +178,8 @@ export function RegionPage() {
     } else if (!openId && shown.current) {
       shown.current = null
       seq.current?.kill()
+      vanTween.current?.kill()
+      stopVeil()
       exp && (exp.paused = false)
       exp?.map.zoomOut()
       exp?.map.setSelected(null)
@@ -182,16 +198,58 @@ export function RegionPage() {
         .to(el, { yPercent: 110, rotate: -7, duration: 0.6, ease: 'alt.in' }, 0.3)
     }
 
-    function burnAway() {
-      if (!el || !ld) return
-      // a WebGL copy of the paper takes over, then burns away revealing the page
+    /** The same paper + topographic pattern as the site loader (WebGL). */
+    function startVeil() {
+      if (!ld) return
+      stopVeil()
       const c = document.createElement('canvas')
-      c.className = s.burn
-      el.appendChild(c)
-      const veil = new LoaderOverlay(c)
-      gsap.delayedCall(0.08, () => {
-        gsap.set(ld, { autoAlpha: 0 })
-        veil.dissolve({ delay: 0, duration: 1.7, onStart: () => intro.current?.play(0) }).then(() => c.remove())
+      c.className = s.veil
+      ld.prepend(c)
+      veil.current = { overlay: new LoaderOverlay(c), canvas: c }
+    }
+
+    function stopVeil() {
+      veil.current?.overlay.dispose()
+      veil.current?.canvas.remove()
+      veil.current = null
+    }
+
+    /** Van driving away: 11-frame sprite atlas (4 × 3 grid), looping. */
+    function startVan() {
+      const van = ld?.querySelector<HTMLElement>('[data-van]')
+      if (!van) return
+      vanTween.current?.kill()
+      const fr = { f: 0 }
+      vanTween.current = gsap.to(fr, {
+        f: 11,
+        duration: 11 / 14,
+        ease: 'none',
+        repeat: -1,
+        onUpdate: () => {
+          const i = Math.min(10, Math.floor(fr.f))
+          van.style.backgroundPosition = `${((i % 4) * 100) / 3}% ${Math.floor(i / 4) * 50}%`
+        },
+      })
+    }
+
+    function burnAway() {
+      if (!ld) return
+      const v = veil.current
+      // the content fades, then the patterned paper burns away revealing the page
+      gsap.to(ld.querySelectorAll('[data-ld], [data-route-svg]'), { autoAlpha: 0, duration: 0.35, ease: 'alt.in' })
+      gsap.delayedCall(0.3, () => {
+        vanTween.current?.kill()
+        gsap.set(ld, { backgroundColor: 'transparent' })
+        if (!v) {
+          gsap.set(ld, { autoAlpha: 0 })
+          intro.current?.play(0)
+          return
+        }
+        veil.current = null
+        v.overlay.dissolve({ delay: 0, duration: 1.7, onStart: () => intro.current?.play(0) }).then(() => {
+          v.canvas.remove()
+          gsap.set(ld, { autoAlpha: 0 })
+        })
       })
     }
   }, [openId])
@@ -365,12 +423,10 @@ export function RegionPage() {
         </div>
       </div>
 
-      {/* paper loader */}
+      {/* paper loader: patterned paper (WebGL canvas prepended at runtime), van, counter, route */}
       <div className={s.loader} ref={loader} style={{ visibility: 'hidden' }} aria-hidden="true">
         <div className={s.loaderCenter}>
-          <span className={s.loaderVehicle} data-ld>
-            <VehicleIcon id={vehicle} size={84} />
-          </span>
+          <span className={s.loaderVan} data-ld data-van />
           <span className={s.loaderCount} data-ld>
             <span ref={counter}>0</span>
           </span>
@@ -378,10 +434,17 @@ export function RegionPage() {
             Bienvenido <span className="script">a</span> {loading?.name}
           </span>
         </div>
-        <svg className={s.loaderRoute} viewBox="0 0 600 140" aria-hidden="true">
-          <path d="M20 120 C 120 120, 140 40, 230 60 S 360 130, 420 80 S 520 20, 580 30" pathLength={1} data-route className={s.loaderPath} />
-          <circle cx="20" cy="120" r="5" />
-          <circle cx="580" cy="30" r="5" />
+        <svg className={s.loaderRoute} viewBox="0 0 510 148" preserveAspectRatio="none" data-route-svg>
+          <defs>
+            <clipPath id="loader-route-reveal" clipPathUnits="userSpaceOnUse">
+              <rect x="0" y="0" width="0" height="148" data-route-reveal />
+            </clipPath>
+            <clipPath id="loader-route-progress" clipPathUnits="userSpaceOnUse">
+              <rect x="0" y="0" width="0" height="148" data-route-progress />
+            </clipPath>
+          </defs>
+          <path className={s.routeBase} d={ROUTE_D} clipPath="url(#loader-route-reveal)" />
+          <path className={s.routeLine} d={ROUTE_D} clipPath="url(#loader-route-progress)" />
         </svg>
       </div>
     </div>
