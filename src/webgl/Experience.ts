@@ -94,6 +94,8 @@ export class Experience {
   private hasSize = false
   private mode: 'hero' | 'transition' | 'map' = 'hero'
   onFrame: (() => void) | null = null
+  /** Skip rendering while a full-screen page covers the canvas. */
+  paused = false
 
   constructor(public canvas: HTMLCanvasElement, events: MapEvents) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' })
@@ -212,6 +214,7 @@ export class Experience {
   private tick = (time: number) => {
     this.timer.update(time)
     if (!this.hasSize) return this.resize()
+    if (this.paused) return
     const dt = Math.min(this.timer.getDelta(), 1 / 20)
     const t = this.timer.getElapsed()
     this.post.uniforms.uTime.value = t

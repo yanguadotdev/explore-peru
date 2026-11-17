@@ -39,10 +39,14 @@ export default function App() {
       p.world = v
       update()
     }).then(() => {
-      if (import.meta.env.DEV && new URLSearchParams(location.search).has('map')) {
+      const params = new URLSearchParams(location.search)
+      if (import.meta.env.DEV && params.has('map')) {
         setLoader(false)
         e.jumpToMap()
         store.set({ phase: 'map', sound: false })
+        // ?map&region=<id> opens a region page straight away
+        const region = params.get('region')
+        if (region) gsap.delayedCall(0.3, () => store.set({ openStop: region }))
       }
     })
 

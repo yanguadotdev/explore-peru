@@ -1,12 +1,12 @@
-import Lenis from 'lenis'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { MAIN_STOPS, STOPS } from '../data/stops'
 import { audio } from '../lib/audio'
 import { gsap } from '../lib/ease'
 import { getExperience } from '../lib/experience'
 import { store, useStore, type VehicleId } from '../lib/store'
-import { Arrow, Chevron, Close, ListIcon, MapIcon, Mark, SoundIcon, StopIcon, VehicleIcon } from './Icons'
+import { Chevron, Close, ListIcon, MapIcon, Mark, SoundIcon, StopIcon, VehicleIcon } from './Icons'
 import { Illustration } from './Illustration'
+import { RegionPage } from './RegionPage'
 import { Stamp } from './Stamp'
 import s from './MapUI.module.css'
 
@@ -29,7 +29,7 @@ export function MapUI() {
       <SoundToggle />
       <VehicleSwitcher />
       <HoverCard />
-      <StopPanel />
+      <RegionPage />
       <StampsModal />
     </div>
   )
@@ -540,238 +540,6 @@ function HoverCard() {
         )}
       </div>
     </div>
-  )
-}
-
-// ------------------------------------------------------------------ stop panel
-
-/** "Peek" pose: a small tilted card poking in from the bottom-right corner. */
-const PEEK = { xPercent: 18, yPercent: 24, rotate: -4, scale: 0.58 }
-
-function StopPanel() {
-  const openId = useStore((st) => st.openStop)
-  const collected = useStore((st) => st.collected)
-  const [stopId, setStopId] = useState<string | null>(null)
-  const panel = useRef<HTMLElement>(null)
-  const scroller = useRef<HTMLDivElement>(null)
-  const content = useRef<HTMLDivElement>(null)
-  const stampRef = useRef<HTMLDivElement>(null)
-  const lenis = useRef<Lenis | null>(null)
-  const peek = useRef<HTMLDivElement>(null)
-  const hint = useRef<HTMLDivElement>(null)
-  const hintShown = useRef(false)
-  const isOpen = useRef(false)
-
-  const stop = STOPS.find((x) => x.id === stopId)
-
-  // open / close orchestration — a layout effect so the panel mounts and starts
-  // moving in the same frame as the click (no post-paint render hop)
-  useLayoutEffect(() => {
-    const el = panel.current
-    if (!el) return
-    const exp = getExperience()
-    if (openId) {
-      const target = STOPS.find((x) => x.id === openId)!
-      exp?.map.flyTo(openId, true)
-      exp?.map.setSelected(openId)
-      void target
-      setStopId(openId)
-      audio.play('click')
-    } else if (stopId) {
-      // reverse: fold back into the tilted card, then drop out bottom-right
-      isOpen.current = false
-      const tl = gsap.timeline({
-        onComplete: () => {
-          setStopId(null)
-          gsap.set(el, { visibility: 'hidden' })
-        },
-      })
-      tl.to(el, { ...PEEK, duration: 0.42, ease: 'alt.inOut', overwrite: true })
-        .to(el, { xPercent: 70, yPercent: 48, rotate: -8, autoAlpha: 0, duration: 0.3, ease: 'alt.in' })
-      exp?.map.zoomOut()
-      exp?.map.setSelected(null)
-    }
-  }, [openId])
-
-  // animate content whenever the displayed stop changes
-  useLayoutEffect(() => {
-    const el = panel.current
-    if (!el || !stopId) return
-    let contentDelay = 0.1
-    if (!isOpen.current) {
-      // first open: ONE continuous motion, starting on the click frame — the
-      // tilted card glides in from the bottom-right while straightening and
-      // growing into the full panel (ease-out, so it moves fastest right away)
-      isOpen.current = true
-      contentDelay = 0.15
-      gsap.set(el, { visibility: 'visible' })
-      gsap.fromTo(
-        el,
-        { autoAlpha: 0, xPercent: 40, yPercent: 32, rotate: -6, scale: 0.6 },
-        { autoAlpha: 1, xPercent: 0, yPercent: 0, rotate: 0, scale: 1, duration: 0.75, ease: 'alt.out', overwrite: true },
-      )
-      // the thumbnail flashes beside it and slides away as the panel arrives
-      gsap
-        .timeline()
-        .fromTo(peek.current, { autoAlpha: 0, x: 40, y: 40, rotate: 2 }, { autoAlpha: 1, x: 0, y: 0, rotate: -5, duration: 0.25, ease: 'alt.out' })
-        .to(peek.current, { autoAlpha: 0, x: -60, y: 20, rotate: -9, duration: 0.35, ease: 'alt.in' }, 0.2)
-    }
-    const items = content.current?.querySelectorAll('[data-reveal]') ?? []
-    gsap.fromTo(items, { autoAlpha: 0, y: 26 }, { autoAlpha: 1, y: 0, duration: 0.65, stagger: 0.045, ease: 'alt.out', delay: contentDelay })
-    scroller.current?.scrollTo({ top: 0 })
-    lenis.current?.scrollTo(0, { immediate: true })
-
-    // "more below" hint: shown for each stop if the content overflows
-    const sc = scroller.current
-    if (hint.current && sc) {
-      const overflows = sc.scrollHeight > sc.clientHeight + 24
-      hintShown.current = overflows
-      gsap.fromTo(hint.current, { autoAlpha: 0, y: 12 }, { autoAlpha: overflows ? 1 : 0, y: 0, duration: 0.5, ease: 'alt.out', delay: contentDelay + 0.35, overwrite: true })
-    }
-
-    // passport stamp — only the 8 route stops award one
-    const onRoute = STOPS.find((x) => x.id === stopId)?.kind === 'stop'
-    const already = store.get().collected.includes(stopId)
-    const st = stampRef.current
-    if (st && !onRoute) gsap.set(st, { autoAlpha: 0, overwrite: true })
-    else if (st) {
-      if (!already) {
-        gsap.fromTo(st, { autoAlpha: 0, scale: 2.2, rotate: -40 }, {
-          autoAlpha: 1,
-          scale: 1,
-          rotate: -10,
-          duration: 0.55,
-          delay: contentDelay + 0.45,
-          ease: 'back.out(1.6)',
-          onStart: () => audio.play('stamp'),
-          onComplete: () => {
-            const c = store.get().collected
-            if (!c.includes(stopId)) {
-              const next = [...c, stopId]
-              store.set({ collected: next })
-              getExperience()?.map.setCollected(next)
-            }
-          },
-        })
-      } else gsap.set(st, { autoAlpha: 1, scale: 1, rotate: -10 })
-    }
-  }, [stopId])
-
-  // Lenis smooth scroll inside the panel
-  useEffect(() => {
-    const sc = scroller.current
-    if (!sc || !content.current) return
-    const l = new Lenis({ wrapper: sc, content: content.current, smoothWheel: true, lerp: 0.09 })
-    lenis.current = l
-    const raf = (time: number) => l.raf(time * 1000)
-    gsap.ticker.add(raf)
-    // the first real scroll dismisses the "more below" hint
-    const onScroll = () => {
-      if (!hintShown.current || sc.scrollTop < 8) return
-      hintShown.current = false
-      gsap.to(hint.current, { autoAlpha: 0, y: 12, duration: 0.35, ease: 'alt.in', overwrite: true })
-    }
-    sc.addEventListener('scroll', onScroll, { passive: true })
-    return () => {
-      sc.removeEventListener('scroll', onScroll)
-      gsap.ticker.remove(raf)
-      l.destroy()
-    }
-  }, [])
-
-  const idx = stop ? MAIN_STOPS.findIndex((x) => x.id === stop.id) : -1
-  const next = idx >= 0 ? MAIN_STOPS[(idx + 1) % MAIN_STOPS.length] : null
-  const prev = idx >= 0 ? MAIN_STOPS[(idx - 1 + MAIN_STOPS.length) % MAIN_STOPS.length] : null
-
-  return (
-    <>
-    {/* thumbnail that rides beside the tilted card during the peek phase */}
-    <div className={s.panelPeek} ref={peek} style={{ visibility: 'hidden' }} aria-hidden="true">
-      {stop && <Illustration stop={stop} className={s.panelPeekArt} />}
-    </div>
-    <aside className={s.panel} ref={panel} style={{ visibility: 'hidden' }} aria-hidden={!stop} aria-label={stop?.name}>
-      <button className={s.panelClose} aria-label="Cerrar" onClick={() => store.set({ openStop: null })}>
-        <Close />
-      </button>
-      <div className={s.panelScroll} ref={scroller} data-lenis-prevent>
-        <div ref={content}>
-          {stop && (
-            <>
-              <div className={s.panelArtWrap} data-reveal>
-                <Illustration stop={stop} className={s.panelArt} />
-                <div className={s.panelStamp} ref={stampRef} style={{ visibility: 'hidden' }}>
-                  <Stamp stop={stop} collected size={118} />
-                </div>
-              </div>
-              <div className={s.panelBody}>
-                <span className={s.panelKicker} data-reveal>
-                  {stop.kind === 'stop' ? `Parada ${String(stop.index).padStart(2, '0')} / ${String(MAIN_STOPS.length).padStart(2, '0')} · ` : 'Región · '}{stop.stage}
-                </span>
-                <h2 className={s.panelTitle} data-reveal>
-                  {stop.name}
-                </h2>
-                <div className={s.panelMeta} data-reveal>
-                  <span>Capital: {stop.capital}</span>
-                  <span>{stop.altitude.toLocaleString('es')} msnm</span>
-                  {collected.includes(stop.id) && <span className={s.panelGot}>Sello obtenido</span>}
-                </div>
-                <p className={s.panelLead} data-reveal>
-                  {stop.teaser}
-                </p>
-                {stop.story.map((sec, i) => (
-                  <section key={i} className={s.panelSection} data-reveal>
-                    <span className={s.panelSecNum}>{String(i + 1).padStart(2, '0')}</span>
-                    <h3>{sec.title}</h3>
-                    <p>{sec.body}</p>
-                  </section>
-                ))}
-                {stop.note && (
-                  <div className={s.panelNote} data-reveal>
-                    <StopIcon icon="compass" size={28} />
-                    <div>
-                      <span>Imperdible</span>
-                      <strong>{stop.note}</strong>
-                    </div>
-                  </div>
-                )}
-                <div className={s.panelNav} data-reveal>
-                  {prev && (
-                    <button onClick={() => store.set({ openStop: prev.id })}>
-                      <span className={s.flip}>
-                        <Arrow size={16} />
-                      </span>
-                      <span>
-                        <em>Anterior</em>
-                        {prev.name}
-                      </span>
-                    </button>
-                  )}
-                  {next && (
-                    <button className={s.panelNext} onClick={() => store.set({ openStop: next.id })}>
-                      <span>
-                        <em>Siguiente parada</em>
-                        {next.name}
-                      </span>
-                      <Arrow size={16} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-      {/* "more below" hint, pinned to the panel bottom; fades on first scroll */}
-      <div className={s.scrollHint} ref={hint} style={{ visibility: 'hidden' }} aria-hidden="true">
-        <span className={s.scrollHintPill}>
-          Desliza para ver más
-          <svg width="12" height="14" viewBox="0 0 12 14" className={s.scrollHintArrow}>
-            <path d="M6 1v11M1.5 7.5 6 12l4.5-4.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </span>
-      </div>
-    </aside>
-    </>
   )
 }
 

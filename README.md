@@ -19,15 +19,26 @@ de portfolio pensada para que viajeros de otros países exploren el mapa y sus c
 2. **Hero**: foto de Machu Picchu en WebGL con zoom lento, parallax y un "empujón" al entrar. El
    título "Explora Perú" se entrelaza con la línea de la ruta, y el botón pasa de píldora a círculo.
 3. **Transición**: la foto se quema y revela el diorama.
-4. **Mapa 3D**: maqueta del Perú sobre papel.
+4. **Mapa 3D**: el Perú como losa elevada sobre un mundo continuo (Pacífico y países vecinos), que se pierde en la bruma.
    - Pacífico con aguas poco profundas y espuma en la orilla; países vecinos rotulados.
    - Costa desértica (huarangos, cactus, oasis de Huacachina, líneas de Nazca), Andes con nieve
      en las cumbres y altiplano, selva amazónica con ríos (Amazonas, Marañón, Ucayali, Urubamba,
      Madre de Dios) y el lago Titicaca con las islas de los uros.
    - Hitos en la ruta: Kuélap, Chan Chan, Lima, el Misti, Machu Picchu y casas palafito en Loreto.
    - Departamentos dibujados sobre el relieve; el que tiene el cursor encima (o está abierto) se ilumina.
-   - Pines en las 25 regiones, panel con curiosidades, lista de regiones, pasaporte de sellos y
-     transporte a elegir (combi, llama o tren andino).
+   - Pines en las 25 regiones, lista de regiones, pasaporte de sellos y transporte a elegir
+     (combi, llama o tren andino).
+5. **Página de región** (clic en un pin, en la lista o en un sello): la cámara se acerca al pin,
+   un velo de papel se abre desde él con contador y ruta, y se quema revelando la página:
+   - Hero a pantalla completa con la foto de la región, título letra a letra, región anterior y
+     siguiente, y el sello de la ruta si corresponde.
+   - Al hacer scroll la foto se encoge como una postal, sube un titular gigante y una hoja marrón
+     rasgada lo cubre con fotos flotando en parallax.
+   - "Sobre": mini mapa del Perú con la región, altitud animada y texto.
+   - "Historias del camino": una tarjeta que crece a pantalla completa y se vuelve un slider con
+     las tres curiosidades.
+   - Desvíos a las regiones vecinas y una tarjeta hacia la siguiente región.
+   - "Volver al mapa" / "Explorar en 3D" pliega la página y regresa al diorama.
 
 La geografía está simplificada a mano: es un mapa ilustrado, no cartografía exacta.
 
@@ -51,7 +62,8 @@ pnpm build      # type-check + build de producción en dist/
 pnpm audio      # regenera los WAV de public/audio
 ```
 
-Atajo de desarrollo: `http://localhost:5178/?map` salta directo al mapa (solo en `dev`).
+Atajos de desarrollo (solo en `dev`): `http://localhost:5178/?map` salta directo al mapa y
+`?map&region=cusco` abre además la página de una región.
 
 El fondo del hero se elige en `src/webgl/Experience.ts` (`HERO_BACKGROUND`). Si la foto no carga,
 se usa la escena 3D de montañas.
@@ -59,6 +71,13 @@ se usa la escena 3D de montañas.
 ## Recursos externos (`public/`)
 
 - `machu-picchu.jpg`: foto del hero.
+- `onboarding/`: fotos de [Unsplash](https://unsplash.com) (licencia Unsplash, uso libre):
+  - `vinicunca.jpg` — Montaña de Siete Colores, por Johnson Wang
+  - `huacachina.jpg` — Oasis de Huacachina, por Domenica Basantes
+  - `llama.jpg` — Llama en los Andes, por Sofia Guaico
+- `regions/<id>/`: fotos de [Unsplash](https://unsplash.com) (licencia Unsplash) para cada región:
+  `hero.jpg` y `s1`–`s3.jpg`. Los ids de origen están en `src/data/regionPhotos.ts`
+  (`https://unsplash.com/photos/<id>`).
 - `pattern-alt.png`: patrón topográfico del loader.
 - `fonts/`: Centra No2, Heldies, Barlow ExtraBold y Krona One.
 

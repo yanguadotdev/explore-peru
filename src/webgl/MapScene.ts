@@ -220,6 +220,15 @@ export class MapScene {
     return tl
   }
 
+  /** Close dive onto a region, used right before its page covers the map. */
+  diveTo(id: string) {
+    const s = STOPS.find((x) => x.id === id)
+    if (!s) return
+    this.flying = true
+    gsap.to(this.rig.target, { x: s.x, y: heightAt(s.x, s.z), z: s.z, duration: 1.5, ease: 'alt.inOut', overwrite: true, onComplete: () => void (this.flying = false) })
+    gsap.to(this.rig, { distance: 26, polar: 0.82, duration: 1.5, ease: 'alt.inOut', overwrite: true })
+  }
+
   flyTo(id: string, panelOpen: boolean) {
     const s = STOPS.find((x) => x.id === id)
     if (!s) return
