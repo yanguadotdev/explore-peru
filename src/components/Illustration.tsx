@@ -1,5 +1,4 @@
 import type { Region, Stop } from '../data/stops'
-import { StopIcon } from './Icons'
 
 /** Palette per natural region: sky (top → bottom) and three hill layers. */
 const LOOK: Record<Region, { sky: [string, string]; hills: [string, string, string]; dots: string }> = {
@@ -8,7 +7,7 @@ const LOOK: Record<Region, { sky: [string, string]; hills: [string, string, stri
   Selva: { sky: ['#B9D3C2', '#EEF0D6'], hills: ['#6E9A72', '#3F7A45', '#285E33'], dots: '#1E4A28' },
 }
 
-/** Flat landscape vignette used on hover cards and the stop panel header. */
+/** Flat landscape vignette used on the map hover cards. */
 export function Illustration({ stop, className }: { stop: Stop; className?: string }) {
   const look = LOOK[stop.stage]
   const [top, bottom] = look.sky
@@ -34,12 +33,6 @@ export function Illustration({ stop, className }: { stop: Stop; className?: stri
       {Array.from({ length: 14 }).map((_, i) => (
         <circle key={i} cx={12 + i * 23} cy={156 - Math.sin(i * 1.3) * 4} r={stop.stage === 'Costa' ? 3 : 5 + (i % 3)} fill={look.dots} />
       ))}
-      <g transform="translate(124 52)" color="#3A2418">
-        <circle cx="36" cy="36" r="38" fill="#FBF7EE" opacity=".92" />
-        <g transform="translate(6 6) scale(1.25)">
-          <StopIcon icon={stop.icon} size={48} />
-        </g>
-      </g>
     </svg>
   )
 }
