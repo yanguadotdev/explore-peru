@@ -8,6 +8,7 @@ import { gsap } from '../lib/ease'
 import { getExperience } from '../lib/experience'
 import { store, useStore } from '../lib/store'
 import { LiquidFill } from '../webgl/LiquidFill'
+import { LiquidSlider } from '../webgl/LiquidSlider'
 import { LoaderOverlay } from '../webgl/LoaderOverlay'
 import { Arrow, Close, Mark, StopIcon, VehicleIcon } from './Icons'
 import { Stamp } from './Stamp'
@@ -605,32 +606,48 @@ function StorySlider({ stop, slides }: { stop: Stop; slides: string[] }) {
   const [idx, setIdx] = useState(0)
   const prevIdx = useRef(0)
   const root = useRef<HTMLDivElement>(null)
+  const canvas = useRef<HTMLCanvasElement>(null)
+  const gl = useRef<LiquidSlider | null>(null)
   const dir = useRef<1 | -1>(1)
   const n = stop.story.length
+
+  // WebGL photo layer: transitions flood in behind the liquid noise edge
+  useLayoutEffect(() => {
+    if (!canvas.current) return
+    const slider = new LiquidSlider(canvas.current, slides, (o, onUpdate, onComplete) =>
+      gsap.to(o, { p: 1, z: 1.08, duration: 1.5, ease: 'alt.inOut', onUpdate, onComplete }),
+    )
+    gl.current = slider
+    return () => {
+      slider.dispose()
+      gl.current = null
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- rebuild only when the photo set changes
+  }, [slides.join('|')])
 
   const go = (i: number, d: 1 | -1) => {
     dir.current = d
     setIdx(((i % n) + n) % n)
   }
 
-  // wipe the new slide in over the previous one
+  // the photo floods in (WebGL); the old text leaves and the new one rises
   useLayoutEffect(() => {
     const el = root.current
     if (!el) return
     const items = el.querySelectorAll<HTMLElement>('[data-slide]')
     const from = prevIdx.current
     prevIdx.current = idx
-    items.forEach((it, i) => gsap.set(it, { zIndex: i === idx ? 2 : i === from ? 1 : 0 }))
     const cur = items[idx]
     const first = from === idx
     const tl = gsap.timeline({ defaults: { ease: 'alt.out' } })
     if (!first) {
-      tl.fromTo(cur, { clipPath: dir.current > 0 ? 'inset(0% 0% 0% 100%)' : 'inset(0% 100% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.1, ease: 'alt.inOut' }, 0)
-        .fromTo(cur.querySelector('img'), { scale: 1.3, xPercent: dir.current * 8 }, { scale: 1.08, xPercent: 0, duration: 1.6 }, 0)
-        .to(items[from].querySelector('img'), { xPercent: -dir.current * 10, duration: 1.1, ease: 'alt.inOut' }, 0)
+      gl.current?.goTo(idx, dir.current)
+      tl.to(items[from], { autoAlpha: 0, x: dir.current * 40, duration: 0.45, ease: 'alt.in' }, 0)
     }
-    tl.fromTo(cur.querySelectorAll('[data-word]'), { yPercent: 110 }, { yPercent: 0, duration: 0.9, stagger: 0.04 }, first ? 0 : 0.45)
-      .fromTo(cur.querySelectorAll('[data-fade]'), { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.7, stagger: 0.08 }, first ? 0.2 : 0.65)
+    items.forEach((it, i) => i !== idx && i !== from && gsap.set(it, { autoAlpha: 0 }))
+    tl.set(cur, { autoAlpha: 1, x: 0 }, first ? 0 : 0.45)
+      .fromTo(cur.querySelectorAll('[data-word]'), { yPercent: 110 }, { yPercent: 0, duration: 0.9, stagger: 0.04 }, first ? 0 : 0.7)
+      .fromTo(cur.querySelectorAll('[data-fade]'), { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.7, stagger: 0.08 }, first ? 0.2 : 0.9)
     // progress bar of the active slide; auto-advance when it fills
     const bars = el.querySelectorAll<HTMLElement>('[data-bar]')
     bars.forEach((b, i) => gsap.set(b, { scaleX: i < idx ? 1 : 0 }))
@@ -642,10 +659,10 @@ function StorySlider({ stop, slides }: { stop: Stop; slides: string[] }) {
 
   return (
     <div className={s.slider} ref={root}>
+      <canvas className={s.sliderGl} ref={canvas} role="img" aria-label={stop.story[idx].title} />
+      <span className={s.slideShade} />
       {stop.story.map((st, i) => (
-        <div key={i} className={s.slide} data-slide>
-          <img src={slides[i]} alt={st.title} loading="lazy" />
-          <span className={s.slideShade} />
+        <div key={i} className={s.slide} data-slide style={i === 0 ? undefined : { visibility: 'hidden' }}>
           <div className={s.slideText}>
             <span className={s.slideBadge} data-fade>
               <em>Historia</em>

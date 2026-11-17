@@ -37,7 +37,7 @@ de portfolio pensada para que viajeros de otros países exploren el mapa y sus c
      IronHill, de Codegrid) inunda la pantalla; el titular se vuelve a escribir en crema entre
      fotos flotando, y al cerrar la sección el crema sube con el mismo borde líquido.
    - "Historias del camino": una tarjeta que crece a pantalla completa y se vuelve un slider con
-     las tres curiosidades.
+     las tres curiosidades; cada foto entra con el mismo borde líquido (WebGL).
    - Desvíos a las regiones vecinas y una tarjeta hacia la siguiente región.
    - "Volver al mapa" / "Explorar en 3D" pliega la página y regresa al diorama.
 
