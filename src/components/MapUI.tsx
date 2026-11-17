@@ -1,11 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { regionPhotos } from '../data/regionPhotos'
 import { MAIN_STOPS, STOPS } from '../data/stops'
 import { audio } from '../lib/audio'
 import { gsap } from '../lib/ease'
 import { getExperience } from '../lib/experience'
 import { store, useStore, type VehicleId } from '../lib/store'
 import { Chevron, Close, ListIcon, MapIcon, Mark, SoundIcon, StopIcon, VehicleIcon } from './Icons'
-import { Illustration } from './Illustration'
 import { RegionPage } from './RegionPage'
 import { Stamp } from './Stamp'
 import s from './MapUI.module.css'
@@ -467,6 +467,14 @@ function HoverCard() {
   // inner layer: animated by GSAP (never positioned by code)
   const card = useRef<HTMLDivElement>(null)
   const [shown, setShown] = useState<string | null>(null)
+
+  // warm the cache so the first hover already has its photo
+  useEffect(() => {
+    STOPS.forEach((x) => {
+      const img = new Image()
+      img.src = regionPhotos(x.id).card
+    })
+  }, [])
   const follow = useRef<string | null>(null)
   const side = useRef<'right' | 'left'>('right')
 
@@ -528,7 +536,7 @@ function HoverCard() {
       <div ref={card} className={`${s.hoverCard} ${stop?.kind === 'detour' ? s.hoverDetour : ''}`} style={{ visibility: 'hidden' }}>
         {stop && (
           <>
-            <Illustration stop={stop} className={s.hoverArt} />
+            <img className={s.hoverArt} src={regionPhotos(stop.id).card} alt="" draggable={false} />
             <div className={s.hoverText}>
               <span className={s.hoverKicker}>{stop.kind === 'stop' ? `Parada ${String(stop.index).padStart(2, '0')} · ${stop.stage}` : stop.stage}</span>
               <strong>{stop.name}</strong>

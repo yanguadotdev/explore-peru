@@ -1,6 +1,7 @@
 /*
   Region photos (Unsplash, Unsplash License). Files live in public/regions/<id>/:
-  hero.jpg (1920w) and s1–s3.jpg (1280w). Source ids are kept for credits:
+  hero.jpg (1920w), s1–s3.jpg (1280w) and card.jpg (640×360 crop of the hero,
+  used on the map hover cards). Source ids are kept for credits:
   https://unsplash.com/photos/<id> resolves from images.unsplash.com/photo-<id>.
 */
 export const REGION_PHOTO_IDS: Record<string, [string, string, string, string]> = {
@@ -13,11 +14,11 @@ export const REGION_PHOTO_IDS: Record<string, [string, string, string, string]> 
   sanmartin: ['1723049257420-3c5f3b70dfb0', '1723049256179-a34473072ffb', '1722980932371-ad2d4e24e3e9', '1740002257947-928781cd9e32'],
   lalibertad: ['1713932740905-334d994066bf', '1674488840169-e50df89ef1db', '1592322053945-88b9b538becc', '1694105299216-e3716ac7f0d5'],
   ancash: ['1599883617830-751287e2a87e', '1613052044891-1fc05133984b', '1532996228489-082708ddbde0', '1690981734571-3475045f3c93'],
-  huanuco: ['1594307268424-b61989850805', '1623817984783-22a36a8724e1', '1519074598089-6436475c7f8f', '1749062149481-f12654173ccb'],
+  huanuco: ['1749062149481-f12654173ccb', '1519074598089-6436475c7f8f', '1623817984783-22a36a8724e1', '1749062149260-3dc4c5202c99'],
   pasco: ['1678822193896-531b9bf294ee', '1774284627133-17acf146f689', '1728955675883-e9b4e5818617', '1531360593661-93d8592f2576'],
   ucayali: ['1628091173134-e8f1ee9b6854', '1710713304077-f10d10f3381f', '1710713304044-a61bc040e431', '1641350461767-fb7291bd0386'],
   lima: ['1777198498604-a924324d1eb2', '1531968455001-5c5272a41129', '1580530719837-952e0515b69a', '1568805647297-df963b524678'],
-  callao: ['1725123364662-a9e4d0964359', '1738066705774-b1386972d534', '1765732570666-7ae0dfafe8dc', '1725123364596-7aeff0f76a96'],
+  callao: ['1725123364596-7aeff0f76a96', '1738066705774-b1386972d534', '1765732570666-7ae0dfafe8dc', '1725123364662-a9e4d0964359'],
   junin: ['1738437275510-be54765c8eeb', '1763998861667-86cf0db8b5e5', '1697320762126-ccb6a79be174', '1766946173076-41e5dc025c3c'],
   huancavelica: ['1789263269729-09c8c6fcefd4', '1792778711068-ace32ad197b6', '1789262356555-8508b967bfc6', '1785809967588-8816efa2255a'],
   ica: ['1527736848781-72dc3b2ee00f', '1643856545126-a20f97392fc9', '1617120509865-a3cc8fdc0a0f', '1656432878924-2c9679aec9c7'],
@@ -28,12 +29,12 @@ export const REGION_PHOTO_IDS: Record<string, [string, string, string, string]> 
   puno: ['1553550765-41e7dff2bd41', '1691096535426-c2e0959b6391', '1628190327167-7776a8185757', '1620417396507-9a57523d16a6'],
   arequipa: ['1727161797764-3f7f83bf3adf', '1715093297540-7d4a1343c9af', '1732966651345-dbef5eac3f09', '1563106254-9bffcc4994fa'],
   moquegua: ['1769287349449-402ee5e7262d', '1785810283066-707a5d7920b1', '1607394057692-1f827f11075a', '1785810303509-69a89c3eaf5a'],
-  tacna: ['1785810065232-ad3cb649547c', '1499789236202-ee68fec859fb', '1494783435443-c15feee0a80a', '1621795307430-3ff25aa08945'],
+  tacna: ['1621795307430-3ff25aa08945', '1499789236202-ee68fec859fb', '1494783435443-c15feee0a80a', '1785810065232-ad3cb649547c'],
 }
 
 const base = import.meta.env.BASE_URL
 
 export function regionPhotos(id: string) {
   const dir = `${base}regions/${id}/`
-  return { hero: `${dir}hero.jpg`, slides: [`${dir}s1.jpg`, `${dir}s2.jpg`, `${dir}s3.jpg`] }
+  return { hero: `${dir}hero.jpg`, card: `${dir}card.jpg`, slides: [`${dir}s1.jpg`, `${dir}s2.jpg`, `${dir}s3.jpg`] }
 }
