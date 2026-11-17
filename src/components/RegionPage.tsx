@@ -317,15 +317,16 @@ export function RegionPage() {
       const fill = { p: 0 }
       const fillOut = { p: 0 }
       const st = gsap.timeline({ defaults: { ease: 'none' }, scrollTrigger: { trigger: stage, scroller: sc, start: 'top top', end: 'bottom bottom', scrub: 0.6 } })
-      // the headline only starts once the postcard has almost left the screen
-      const T = 0.95
-      st.to(q('[data-hero]'), { scale: 0.62, rotate: -5, yPercent: -18, borderRadius: 18, duration: 0.6 }, 0)
-        .to(q('[data-hero]'), { yPercent: -125, rotate: -9, duration: 0.55, ease: 'power1.in' }, 0.45)
-        .to(q('[data-hero-ui]'), { autoAlpha: 0, duration: 0.3 }, 0)
-        .fromTo(q('[data-cream-head]'), { autoAlpha: 0, y: () => vh() * 0.22 }, { autoAlpha: 1, y: 0, duration: 0.6, ease: 'power2.out' }, T)
-        // cream headline: each word fades in as you scroll
-        .fromTo(q('[data-cream-head] [data-kick]'), { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.2 }, T)
-        .fromTo(q('[data-cream-head] [data-fw]'), { opacity: 0 }, { opacity: 1, duration: 0.12, stagger: { amount: 0.6 } }, T + 0.05)
+      // Route 66 pacing: the postcard tilts and shrinks a little, then rides up with the
+      // scroll while the headline follows right underneath it (a constant gap, never touching)
+      const T = 0.6
+      st.to(q('[data-hero]'), { scale: 0.88, rotate: -5, borderRadius: 18, duration: 0.3, ease: 'power1.out' }, 0)
+        .to(q('[data-hero]'), { yPercent: -118, duration: 1 }, 0)
+        .to(q('[data-hero-ui]'), { autoAlpha: 0, duration: 0.2 }, 0)
+        .fromTo(q('[data-cream-head]'), { autoAlpha: 1, y: () => vh() * 1.02 }, { y: 0, duration: 1 }, 0)
+        // cream headline: each word fades in as it comes up
+        .fromTo(q('[data-cream-head] [data-kick]'), { autoAlpha: 0.15 }, { autoAlpha: 1, duration: 0.2 }, 0.45)
+        .fromTo(q('[data-cream-head] [data-fw]'), { opacity: 0.15 }, { opacity: 1, duration: 0.1, stagger: { amount: 0.45 } }, 0.5)
         // the brown fill rises from the bottom behind a noisy, liquid edge
         .to(fill, { p: 1.3, duration: 1, ease: 'power1.inOut', onUpdate: () => (liquid.progress = fill.p) }, T + 0.85)
         .set(q('[data-cream-head]'), { autoAlpha: 0 }, T + 1.85)
