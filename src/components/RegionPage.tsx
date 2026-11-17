@@ -10,7 +10,7 @@ import { store, useStore } from '../lib/store'
 import { LiquidFill } from '../webgl/LiquidFill'
 import { LiquidSlider } from '../webgl/LiquidSlider'
 import { LoaderOverlay } from '../webgl/LoaderOverlay'
-import { Arrow, Close, Mark, StopIcon, VehicleIcon } from './Icons'
+import { Arrow, Close, Mark, VehicleIcon } from './Icons'
 import { Stamp } from './Stamp'
 import s from './RegionPage.module.css'
 
@@ -259,27 +259,28 @@ export function RegionPage() {
       const fill = { p: 0 }
       const fillOut = { p: 0 }
       const st = gsap.timeline({ defaults: { ease: 'none' }, scrollTrigger: { trigger: stage, scroller: sc, start: 'top top', end: 'bottom bottom', scrub: 0.6 } })
-      st.to(q('[data-hero]'), { scale: 0.62, rotate: -5, yPercent: -18, borderRadius: 18, duration: 0.7 }, 0)
-        .to(q('[data-hero]'), { yPercent: -120, rotate: -9, duration: 0.6, ease: 'power1.in' }, 0.55)
+      // the headline only starts once the postcard has almost left the screen
+      const T = 0.95
+      st.to(q('[data-hero]'), { scale: 0.62, rotate: -5, yPercent: -18, borderRadius: 18, duration: 0.6 }, 0)
+        .to(q('[data-hero]'), { yPercent: -125, rotate: -9, duration: 0.55, ease: 'power1.in' }, 0.45)
         .to(q('[data-hero-ui]'), { autoAlpha: 0, duration: 0.3 }, 0)
-        .fromTo(q('[data-cream-head]'), { y: () => vh() * 0.6 }, { y: 0, duration: 0.9, ease: 'power2.out' }, 0.25)
+        .fromTo(q('[data-cream-head]'), { autoAlpha: 0, y: () => vh() * 0.22 }, { autoAlpha: 1, y: 0, duration: 0.6, ease: 'power2.out' }, T)
         // cream headline: each word fades in as you scroll
-        .fromTo(q('[data-cream-head] [data-fw]'), { opacity: 0.08 }, { opacity: 1, duration: 0.12, stagger: { amount: 0.6 } }, 0.45)
-        .fromTo(q('[data-cream-head] [data-kick]'), { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.2 }, 0.4)
+        .fromTo(q('[data-cream-head] [data-kick]'), { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.2 }, T)
+        .fromTo(q('[data-cream-head] [data-fw]'), { opacity: 0 }, { opacity: 1, duration: 0.12, stagger: { amount: 0.6 } }, T + 0.05)
         // the brown fill rises from the bottom behind a noisy, liquid edge
-        .to(fill, { p: 1.3, duration: 1, ease: 'power1.inOut', onUpdate: () => (liquid.progress = fill.p) }, 1.25)
-        .set(q('[data-cream-head]'), { autoAlpha: 0 }, 2.25)
+        .to(fill, { p: 1.3, duration: 1, ease: 'power1.inOut', onUpdate: () => (liquid.progress = fill.p) }, T + 0.85)
+        .set(q('[data-cream-head]'), { autoAlpha: 0 }, T + 1.85)
         // then the cream headline is written again, word by word, on the brown
-        .fromTo(q('[data-brown] [data-kick]'), { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.2 }, 2.05)
-        .fromTo(q('[data-brown] [data-fw]'), { opacity: 0 }, { opacity: 1, duration: 0.12, stagger: { amount: 0.6 } }, 2.1)
+        .fromTo(q('[data-brown] [data-kick]'), { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.2 }, T + 1.65)
+        .fromTo(q('[data-brown] [data-fw]'), { opacity: 0 }, { opacity: 1, duration: 0.12, stagger: { amount: 0.6 } }, T + 1.7)
       q('[data-float]').forEach((f, i) => {
         const speed = [1, 1.5, 0.8, 1.25, 1.1][i % 5]
-        st.fromTo(f, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.15 }, 1.95 + i * 0.06)
-          .fromTo(f, { y: () => vh() * 0.45 * speed, rotate: (i % 2 ? 6 : -6) }, { y: () => -vh() * 0.38 * speed, rotate: i % 2 ? -3 : 3, duration: 1.7 }, 1.95)
+        st.fromTo(f, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.15 }, T + 1.55 + i * 0.06)
+          .fromTo(f, { y: () => vh() * 0.45 * speed, rotate: (i % 2 ? 6 : -6) }, { y: () => -vh() * 0.38 * speed, rotate: i % 2 ? -3 : 3, duration: 1.7 }, T + 1.55)
       })
-      st.fromTo(q('[data-icon-float]'), { autoAlpha: 0, y: () => vh() * 0.7, rotate: -10 }, { autoAlpha: 1, y: () => -vh() * 0.2, rotate: 6, duration: 1.7 }, 2.05)
-        // end of the section: the cream rises over the brown with the same liquid edge
-        .to(fillOut, { p: 1.3, duration: 1, ease: 'power1.inOut', onUpdate: () => (liquidOut.progress = fillOut.p) }, 3.2)
+      // end of the section: the cream rises over the brown with the same liquid edge
+      st.to(fillOut, { p: 1.3, duration: 1, ease: 'power1.inOut', onUpdate: () => (liquidOut.progress = fillOut.p) }, T + 2.8)
 
       // ---- stories heading
       gsap.fromTo(q('[data-stories-head] [data-word]'), { yPercent: 110 }, {
@@ -512,9 +513,6 @@ function RegionContent({ stop, lenis }: { stop: Stop; lenis: React.RefObject<Len
                 <img src={src} alt="" loading="lazy" />
               </figure>
             ))}
-            <span className={s.iconFloat} data-icon-float>
-              <StopIcon icon={stop.icon} size={150} />
-            </span>
           </div>
 
           <canvas className={s.liquid} data-liquid-out aria-hidden="true" />
