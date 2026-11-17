@@ -465,12 +465,15 @@
   text-align: right;
 }
 
+/* Route 66 style diamond: a rotated rounded square, icon kept upright */
 .sideBtn {
-  width: 46px;
-  height: 46px;
+  width: 38px;
+  height: 38px;
+  margin: 0 4px;
   display: grid;
   place-items: center;
-  border-radius: 50%;
+  border-radius: 7px;
+  transform: rotate(45deg);
   border: 1.5px solid rgba(251, 247, 238, 0.7);
   background: rgba(20, 10, 4, 0.18);
   backdrop-filter: blur(6px);
@@ -480,12 +483,20 @@
 .side:hover .sideBtn {
   background: var(--paper);
   color: var(--ink);
-  transform: scale(1.08);
+  transform: rotate(45deg) scale(1.08);
+}
+
+.sideBtn > * {
+  transform: rotate(-45deg);
 }
 
 .flip {
   display: inline-flex;
   transform: scaleX(-1);
+}
+
+.sideBtn > .flip {
+  transform: rotate(-45deg) scaleX(-1);
 }
 
 .cue {
@@ -810,55 +821,69 @@
   transform: scaleX(0);
 }
 
-.trail {
+/* infinite road of story thumbnails */
+.timeline {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 22px;
-  height: 60px;
+  bottom: 18px;
+  height: 101px;
+  /* clip only sideways: the enlarged thumbnails may poke above and below the road */
+  overflow-x: clip;
+  overflow-y: visible;
+  touch-action: pan-y;
 }
 
-.trail svg {
+.timelineTrack {
   position: absolute;
   inset: 0;
+  left: 50%;
   width: 100%;
-  height: 100%;
 }
 
-.trail path {
+.timelineRoad {
+  position: absolute;
+  top: 0;
+  height: 101px;
+  overflow: visible;
+}
+
+.timelineRoad path {
   fill: none;
   stroke: var(--accent);
   stroke-width: 2;
   vector-effect: non-scaling-stroke;
 }
 
-.trailDot {
+.timelineStep {
   position: absolute;
-  top: 50%;
-  width: 40px;
-  height: 40px;
-  margin: -24px 0 0 -20px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   overflow: hidden;
-  border: 3px solid var(--paper);
-  opacity: 0.75;
-  transition: transform 0.4s var(--alt-out), opacity 0.3s, border-color 0.3s;
+  border: 2.5px solid var(--accent);
+  background: #2a1a12;
+  transform: translate(-50%, -50%) scale(1);
+  transition:
+    transform 0.9s var(--alt-out),
+    box-shadow 0.4s;
 }
 
-.trailDot img {
+.timelineStep img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  pointer-events: none;
 }
 
-.trailDot:hover {
-  opacity: 1;
+.timelineStep:hover {
+  transform: translate(-50%, -50%) scale(1.15);
 }
 
-.trailOn {
-  opacity: 1;
-  border-color: var(--accent);
-  transform: scale(1.3);
+.timelineOn,
+.timelineOn:hover {
+  transform: translate(-50%, -50%) scale(1.71);
+  box-shadow: 0 6px 18px rgba(20, 10, 4, 0.45);
 }
 
 /* ------------------------------------------------------------------ detours */

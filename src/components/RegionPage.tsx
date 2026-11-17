@@ -737,13 +737,17 @@ function RegionContent({ stop, lenis }: { stop: Stop; lenis: React.RefObject<Len
 // ------------------------------------------------------------------ story slider
 
 function StorySlider({ stop, slides }: { stop: Stop; slides: string[] }) {
-  const [idx, setIdx] = useState(0)
+  // continuous position along the (infinite) road; the story shown is pos mod n
+  const [pos, setPos] = useState(0)
+  const n = stop.story.length
+  const idx = ((pos % n) + n) % n
   const prevIdx = useRef(0)
+  const prevPos = useRef(0)
   const root = useRef<HTMLDivElement>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
   const gl = useRef<LiquidSlider | null>(null)
   const dir = useRef<1 | -1>(1)
-  const n = stop.story.length
+  const swipe = useRef<{ x: number; y: number } | null>(null)
 
   // WebGL photo layer: transitions flood in behind the liquid noise edge
   useLayoutEffect(() => {
@@ -759,10 +763,8 @@ function StorySlider({ stop, slides }: { stop: Stop; slides: string[] }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- rebuild only when the photo set changes
   }, [slides.join('|')])
 
-  const go = (i: number, d: 1 | -1) => {
-    dir.current = d
-    setIdx(((i % n) + n) % n)
-  }
+  /** Moves to an absolute road position (prev/next are pos ∓ 1). */
+  const go = (target: number) => setPos(target)
 
   // the photo floods in (WebGL); the old text leaves and the new one rises
   useLayoutEffect(() => {
@@ -771,6 +773,8 @@ function StorySlider({ stop, slides }: { stop: Stop; slides: string[] }) {
     const items = el.querySelectorAll<HTMLElement>('[data-slide]')
     const from = prevIdx.current
     prevIdx.current = idx
+    dir.current = pos >= prevPos.current ? 1 : -1
+    prevPos.current = pos
     const cur = items[idx]
     const first = from === idx
     const tl = gsap.timeline({ defaults: { ease: 'alt.out' } })
@@ -785,14 +789,26 @@ function StorySlider({ stop, slides }: { stop: Stop; slides: string[] }) {
     // progress bar of the active slide; auto-advance when it fills
     const bars = el.querySelectorAll<HTMLElement>('[data-bar]')
     bars.forEach((b, i) => gsap.set(b, { scaleX: i < idx ? 1 : 0 }))
-    const run = gsap.fromTo(bars[idx], { scaleX: 0 }, { scaleX: 1, duration: 8, ease: 'none', onComplete: () => go(idx + 1, 1) })
+    const run = gsap.fromTo(bars[idx], { scaleX: 0 }, { scaleX: 1, duration: 8, ease: 'none', onComplete: () => go(pos + 1) })
     return () => {
       run.kill()
     }
-  }, [idx])
+  }, [pos])
+
+  // swipe / drag sideways to change story
+  const onPointerDown = (e: React.PointerEvent) => {
+    swipe.current = { x: e.clientX, y: e.clientY }
+  }
+  const onPointerUp = (e: React.PointerEvent) => {
+    const st = swipe.current
+    swipe.current = null
+    if (!st) return
+    const dx = e.clientX - st.x
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(e.clientY - st.y)) go(pos + (dx < 0 ? 1 : -1))
+  }
 
   return (
-    <div className={s.slider} ref={root}>
+    <div className={s.slider} ref={root} onPointerDown={onPointerDown} onPointerUp={onPointerUp}>
       <canvas className={s.sliderGl} ref={canvas} role="img" aria-label={stop.story[idx].title} />
       <span className={s.slideShade} />
       {stop.story.map((st, i) => (
@@ -817,7 +833,7 @@ function StorySlider({ stop, slides }: { stop: Stop; slides: string[] }) {
             </span>
           ))}
         </div>
-        <button className={`${s.side} ${s.sideL}`} onClick={() => go(idx - 1, -1)}>
+        <button className={`${s.side} ${s.sideL}`} onClick={() => go(pos - 1)}>
           <span className={s.sideBtn}>
             <span className={s.flip}>
               <Arrow size={16} />
@@ -828,7 +844,7 @@ function StorySlider({ stop, slides }: { stop: Stop; slides: string[] }) {
             historia
           </span>
         </button>
-        <button className={`${s.side} ${s.sideR}`} onClick={() => go(idx + 1, 1)}>
+        <button className={`${s.side} ${s.sideR}`} onClick={() => go(pos + 1)}>
           <span>
             <em>Siguiente</em>
             historia
@@ -837,16 +853,96 @@ function StorySlider({ stop, slides }: { stop: Stop; slides: string[] }) {
             <Arrow size={16} />
           </span>
         </button>
-        <div className={s.trail}>
-          <svg viewBox="0 0 1000 60" preserveAspectRatio="none" aria-hidden="true">
-            <path d="M0 40 C 120 10, 200 55, 330 30 S 560 5, 670 34 S 880 55, 1000 22" />
+        <StoryTimeline pos={pos} slides={slides} titles={stop.story.map((x) => x.title)} onPick={go} />
+      </div>
+    </div>
+  )
+}
+
+// ------------------------------------------------------------------ story timeline (infinite road)
+
+/** Road drawn under the story thumbnails: one segment, repeated forever (viewBox 1987 × 101). */
+const ROAD_D =
+  'M.252 71c16.667 4.333 54.8 9.128 74-6.072 24-19 37-15 51-11s28 0 32 0 11-7 25-10 11 10 23 10c6.895 0 14.546-3.439 19.916-6.612 3.43-2.027 7.229-3.614 11.182-3.112 6.43.816 15.41 3.385 22.902 9.724 13 11 58 41.007 76 29.003s22-18.006 32-12.003 21 10.007 25 5.003c3.707-4.637 12.569-10.13 21.807-10.91 1.454-.122 2.914.074 4.344.363 25.86 5.227 44.117-.456 53.849-.456 10 0 26-21 47-21s38 10 45 10 21 11 26 11 13-.993 21-5.997c2.925-1.829 5.822-4.424 8.329-7.02 4.532-4.696 10.558-7.983 17.085-7.983h3.586c4.8 0 11.333 6.667 14 10 3.333 3.667 11.8 11 19 11 6.531 0 10.956 3.158 15.95 2.599 4.298-.482 8.399-2.616 12.724-2.545 36.41.598 53.661 5.946 59.326 5.946 6 0 10 12.003 17 12.003s3 10 14 5c10.488-4.767 10.067 1.375 20.408-4.111 1.064-.565 2.065-1.29 2.973-2.083 19.579-17.075 18.821-22.806 27.619-22.806 9 0 14-10.006 24-5.003s20 5 26 11 8 11.003 14 11.003 22 5.004 29 0c5.705-4.077 8.089-6.158 12.565-2.999 2.454 1.732 4.926 3.511 7.749 4.538 12.593 4.584 12.303 5.32 18.958 5.439 3.104.055 6.179.755 8.967 2.122 18.179 8.91 21.099 9.037 25.759 10.9 4.69 1.877 8.51 7.277 17.22 1.323 1.22-.831 2.48-1.663 3.8-2.307 39.08-18.984 42.05-18.12 45.98-24.019 4-6 15-6 23-6s12-.993 19-5.997 4-15.003 12-15.003c2.96 0 5.74 1.421 8.08 3.28 4.37 3.474 9.34 6.72 14.92 6.72h9.68c4.73 0 9.33 1.654 12.74 4.932 7.06 6.788 11.73 12.179 18.06 10.216 4.78-1.481 9.31-4.21 14.31-3.945 26.29 1.39 42.11 9.644 48.82 15.416 1.7 1.463 3.36 2.98 5.31 4.084 12.58 7.096 34.96 17.208 43.08 11.3 3.58-2.6 7.05-4.958 10.12-6.953 6-3.898 13.49-9.244 19.88-6.047 25 13 22 17 30 5s5-6.996 19-12c12.57-4.492 16.27-8.985 24.14-6.233 1.95.681 3.91 1.4 5.95 1.692 10.38 1.478 18.42 1.873 24.42 1.716 8.28-.218 13.85-8.085 19.37-14.27.9-1.008 1.920-2.053 3.090-3.129 1.32-1.212 2.87-2.151 4.48-2.916 20.31-9.593 29.97-18.484 40.55-8.863 11 10 14 4.997 25 10s14-10 26-10 6-6.002 16-10.002 7-10 23-13c7.42-1.39 11.83-3.966 14.3-6.406 2.53-2.495 1.43-6.289 1.48-9.838.05-3.258 2.31-5.448 10.22-1.756 9.37 4.37 21.78 6.183 30.1 6.768 3.85.27 7.57-1.01 11.1-2.56 3.59-1.578 7.67-2.65 10.7-1.723 3.97 1.216 5.83 5.948 9.08 8.546 18.72 14.985 28.49 20.427 34.02 13.973 6-7.004 3 0 13 0s12 5.996 20 5.996 16 5.996 25 0 8-11.993 18-5.996 14 15.998 19 15.998h12.72c5.3 0 10.3-2.234 14.56-5.402 3.3-2.46 7-4.6 9.72-4.6 4.8 0 14 6.668 18 10.002 4.34 3.333 14 10 18 10h32c7 0 29.5 9.572 47 0 9.81-5.365 13.5 15.072 21 17.072'
+const ROAD_W = 1987
+/** Distance between two thumbnails, in % of the slider width. */
+const STEP = 20
+
+/** y of the road (viewBox units) for a horizontal fraction of one segment. */
+const roadY = (() => {
+  let table: number[] | null = null
+  return (fx: number) => {
+    if (!table) {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+      svg.setAttribute('style', 'position:absolute;width:0;height:0;visibility:hidden')
+      const p = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+      p.setAttribute('d', ROAD_D)
+      svg.appendChild(p)
+      document.body.appendChild(svg)
+      const len = p.getTotalLength()
+      const pts = Array.from({ length: 800 }, (_, i) => p.getPointAtLength((len * i) / 799))
+      svg.remove()
+      // y sampled every 1/200 of the width
+      table = Array.from({ length: 201 }, (_, i) => {
+        const x = (ROAD_W * i) / 200
+        let best = pts[0]
+        for (const q of pts) if (Math.abs(q.x - x) < Math.abs(best.x - x)) best = q
+        return best.y
+      })
+    }
+    return table[Math.max(0, Math.min(200, Math.round(fx * 200)))]
+  }
+})()
+
+const mod = (a: number, n: number) => ((a % n) + n) % n
+const range = (a: number, b: number) => Array.from({ length: b - a + 1 }, (_, i) => a + i)
+
+/**
+ * Infinite road of story thumbnails (Route 66 style): segments of the road repeat
+ * forever, each thumbnail sits on the curve, the active one stays centred and
+ * enlarged, and changing story slides the whole track sideways.
+ */
+function StoryTimeline({ pos, slides, titles, onPick }: { pos: number; slides: string[]; titles: string[]; onPick: (pos: number) => void }) {
+  const n = slides.length
+  const track = useRef<HTMLDivElement>(null)
+  const placed = useRef(false)
+
+  useLayoutEffect(() => {
+    // thumbnail k sits at (k + 0.5) · STEP; keep the active one at the centre
+    const x = -(pos + 0.5) * STEP
+    if (!placed.current) {
+      placed.current = true
+      gsap.set(track.current, { xPercent: x })
+    } else gsap.to(track.current, { xPercent: x, duration: 1.3, ease: 'alt.inOut', overwrite: true })
+  }, [pos])
+
+  const ks = range(pos - 4, pos + 4)
+  // the road repeats every 100% (5 steps), independent of how many stories there are
+  const segs = range(Math.floor(((pos - 4) * STEP) / 100), Math.floor(((pos + 5) * STEP) / 100))
+  return (
+    <div className={s.timeline}>
+      <div className={s.timelineTrack} ref={track}>
+        {segs.map((g) => (
+          <svg key={`g${g}`} className={s.timelineRoad} style={{ left: `${g * 100}%`, width: "100%" }} viewBox={`0 0 ${ROAD_W} 101`} preserveAspectRatio="none" aria-hidden="true">
+            <path d={ROAD_D} />
           </svg>
-          {slides.map((src, i) => (
-            <button key={i} className={`${s.trailDot} ${i === idx ? s.trailOn : ''}`} style={{ left: `${18 + i * 32}%` }} onClick={() => go(i, i > idx ? 1 : -1)} aria-label={stop.story[i].title}>
-              <img src={src} alt="" />
+        ))}
+        {ks.map((k) => {
+          const i = mod(k, n)
+          return (
+            <button
+              key={k}
+              type="button"
+              className={`${s.timelineStep} ${k === pos ? s.timelineOn : ''}`}
+              style={{ left: `${(k + 0.5) * STEP}%`, top: roadY(mod((k + 0.5) * STEP, 100) / 100) }}
+              onClick={() => onPick(k)}
+              aria-label={titles[i]}
+              tabIndex={k === pos - 1 || k === pos + 1 ? 0 : -1}
+            >
+              <img src={slides[i]} alt="" draggable={false} />
             </button>
-          ))}
-        </div>
+          )
+        })}
       </div>
     </div>
   )
