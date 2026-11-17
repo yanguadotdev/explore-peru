@@ -40,17 +40,24 @@ const PERU_LL: LL[] = [
 
 /** Pacific Ocean: everything west of the Ecuador–Peru–Chile coastline. */
 const OCEAN_LL: LL[] = [
-  [-85, 2.5], [-78.8, 2.5], [-79.0, 1.4], [-79.7, 1.0], [-80.1, 0.4], [-80.45, -0.3],
+  // far north: Colombia's Pacific coast
+  [-120, 20], [-79.5, 20], [-78.2, 9.0], [-77.4, 7.2], [-77.5, 5.5], [-77.3, 4.0], [-78.0, 2.6], [-79.0, 1.4], [-79.7, 1.0], [-80.1, 0.4], [-80.45, -0.3],
   [-80.7, -0.9], [-80.9, -1.5], [-80.95, -2.2], [-80.3, -2.55], [-79.9, -2.75], [-80.2, -3.2],
   ...PERU_LL.slice(0, 35),
-  [-70.3, -19.0], [-70.25, -21.5], [-85, -21.5],
+  // Chile's coast running south
+  [-70.3, -19.0], [-70.2, -21.5], [-70.45, -24.0], [-70.65, -27.0], [-71.35, -30.0], [-71.6, -33.0], [-73.0, -37.0], [-73.6, -42.0],
+  [-120, -42.0],
 ]
 
 /** Andes spine (Cordillera), north-west → south-east. */
 const SPINE_LL: LL[] = [
+  // Andes of Colombia / Ecuador
+  [-76.5, 6.0], [-77.3, 3.0], [-78.2, 0.5], [-78.9, -1.8], [-79.5, -3.4],
   [-79.6, -4.6], [-79.3, -5.6], [-78.8, -6.8], [-78.2, -7.9], [-77.5, -9.2], [-76.8, -10.4],
   [-76.1, -11.5], [-75.2, -12.6], [-74.2, -13.6], [-73.0, -14.4], [-71.8, -15.2], [-70.6, -16.1],
   [-69.6, -17.2], [-69.3, -18.4],
+  // Bolivian / Chilean Andes
+  [-68.8, -20.5], [-68.4, -23.0], [-68.9, -26.5], [-69.8, -30.0], [-70.3, -34.0],
 ]
 
 export const RIVERS_LL: { name: string; pts: LL[]; width: number }[] = [
@@ -86,9 +93,9 @@ export const OCEAN = toXZ(OCEAN_LL)
 export const SPINE = toXZ(SPINE_LL)
 export const RIVERS = RIVERS_LL.map((r) => ({ ...r, xz: toXZ(r.pts) }))
 
-const [tx, tz] = project(-69.45, -15.75)
-/** Lake Titicaca (rotated ellipse, world units). */
-export const TITICACA = { x: tx, z: tz, rx: 4.6, rz: 2.9, angle: -0.75 }
+const [tx, tz] = project(-69.85, -15.6)
+/** Lake Titicaca, Peruvian side (rotated ellipse, world units). */
+export const TITICACA = { x: tx, z: tz, rx: 3.1, rz: 2.3, angle: -0.75 }
 
 export function inTiticaca(x: number, z: number, grow = 0) {
   const c = Math.cos(TITICACA.angle)

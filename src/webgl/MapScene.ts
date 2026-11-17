@@ -4,7 +4,7 @@ import { gsap } from '../lib/ease'
 import type { VehicleId } from '../lib/store'
 import { buildClouds, buildLabels, buildLandmarks, buildVegetation } from './map/props'
 import { buildMarkers, buildRoad, buildRouteCurve, routeSamples2D, type Marker } from './map/route'
-import { buildPaper, buildSkirt, buildTerrain, buildWater, heightAt } from './map/terrain'
+import { EXT_D, EXT_W, buildTerrain, buildWater, heightAt } from './map/terrain'
 import { VehicleRig } from './map/vehicles'
 
 // yield to the browser between build steps (setTimeout keeps going in background tabs)
@@ -14,6 +14,9 @@ export type MapEvents = {
   onHover: (id: string | null) => void
   onSelect: (id: string) => void
 }
+
+/** Resting camera pose when the map opens: zoomed in on northern Peru. */
+const HOME = { x: -2, z: -8, distance: 96, polar: 0.98 }
 
 export class MapScene {
   scene = new THREE.Scene()
@@ -31,12 +34,12 @@ export class MapScene {
 
   // camera rig (desired → current, damped)
   rig = {
-    target: new THREE.Vector3(2, 4, 4),
-    distance: 240,
-    polar: 0.8,
+    target: new THREE.Vector3(HOME.x, 4, HOME.z),
+    distance: HOME.distance,
+    polar: HOME.polar,
     azimuth: 0,
   }
-  private cur = { target: new THREE.Vector3(2, 4, 4), distance: 330, polar: 0.45, azimuth: -0.25 }
+  private cur = { target: new THREE.Vector3(HOME.x, 4, HOME.z), distance: 170, polar: 0.5, azimuth: -0.25 }
   private velocity = new THREE.Vector2()
   private pointer = new THREE.Vector2(-10, -10)
   private pointerNdc = new THREE.Vector2()
@@ -44,12 +47,16 @@ export class MapScene {
   private downAt = new THREE.Vector2()
   private moved = 0
   private raycaster = new THREE.Raycaster()
+  private tmpV = new THREE.Vector3()
   interactive = false
   hovered: Marker | null = null
   private flying = false
 
   constructor(private dom: HTMLElement, private events: MapEvents) {
-    this.scene.background = new THREE.Color('#EDE3CC')
+    // the world runs on past the edges of the screen and fades into a warm haze
+    const haze = new THREE.Color('#E6DECB')
+    this.scene.background = haze
+    this.scene.fog = new THREE.Fog(haze, 320, 720)
   }
 
   async build(progress: (p: number) => void) {
@@ -71,13 +78,11 @@ export class MapScene {
     sun.shadow.radius = 3
     s.add(hemi, sun, sun.target)
 
-    s.add(buildPaper())
     const terrain = buildTerrain()
     this.hi = terrain.uniforms
     s.add(terrain.mesh)
     progress(0.25)
     await nextFrame()
-    s.add(buildSkirt())
     const water = buildWater()
     this.waterTime = water.time
     s.add(water.group)
@@ -156,12 +161,56 @@ export class MapScene {
   private onWheel = (e: WheelEvent) => {
     if (!this.interactive) return
     e.preventDefault()
-    this.rig.distance = THREE.MathUtils.clamp(this.rig.distance * (1 + e.deltaY * 0.0011), 40, 290)
+    this.rig.distance = THREE.MathUtils.clamp(this.rig.distance * (1 + e.deltaY * 0.0011), 40, 165)
+  }
+
+  /**
+   * The modelled world is finite: never let a screen corner see past it.
+   * Each corner ray is dropped onto the ground; any overshoot pushes the
+   * camera target back inside (works for every aspect ratio and zoom).
+   */
+  private keepInWorld() {
+    const lx = EXT_W / 2 - 8
+    const lz = EXT_D / 2 - 8
+    const cam = this.camera
+    // lookAt() only set the quaternion: refresh matrixWorld before unprojecting
+    cam.updateMatrixWorld(true)
+    let ox = 0
+    let oz = 0
+    for (const [nx, ny] of [
+      [-1, -1],
+      [1, -1],
+      [-1, 1],
+      [1, 1],
+    ]) {
+      this.tmpV.set(nx, ny, 0.5).unproject(cam).sub(cam.position).normalize()
+      // a ray at/above the horizon would reach the void: treat as far north overshoot
+      const t = this.tmpV.y < -0.02 ? (1 - cam.position.y) / this.tmpV.y : Infinity
+      const px = Number.isFinite(t) ? cam.position.x + this.tmpV.x * t : cam.position.x
+      const pz = Number.isFinite(t) ? cam.position.z + this.tmpV.z * t : -lz - 50
+      if (px > lx) ox = Math.max(ox, px - lx)
+      if (px < -lx) ox = Math.min(ox, px + lx)
+      if (pz > lz) oz = Math.max(oz, pz - lz)
+      if (pz < -lz) oz = Math.min(oz, pz + lz)
+    }
+    if (!ox && !oz) return
+    // never trust a degenerate frame: cap the correction and drop non-finite values
+    if (!Number.isFinite(ox) || !Number.isFinite(oz)) return
+    ox = THREE.MathUtils.clamp(ox, -6, 6)
+    oz = THREE.MathUtils.clamp(oz, -6, 6)
+    for (const v of [this.rig.target, this.cur.target]) {
+      v.x -= ox
+      v.z -= oz
+    }
+    cam.position.x -= ox
+    cam.position.z -= oz
+    cam.lookAt(this.cur.target)
   }
 
   private clampTarget() {
-    this.rig.target.x = THREE.MathUtils.clamp(this.rig.target.x, -40, 40)
-    this.rig.target.z = THREE.MathUtils.clamp(this.rig.target.z, -56, 56)
+    // stay over Peru (its bounding box, with a little slack)
+    this.rig.target.x = THREE.MathUtils.clamp(this.rig.target.x, -30, 30)
+    this.rig.target.z = THREE.MathUtils.clamp(this.rig.target.z, -50, 58)
   }
 
   /** Intro: the route draws itself while the camera settles into place. */
@@ -199,7 +248,17 @@ export class MapScene {
   }
 
   zoomOut() {
-    gsap.to(this.rig, { distance: 240, polar: 0.8, duration: 1.4, ease: 'alt.inOut' })
+    this.flying = true
+    gsap.to(this.rig, {
+      distance: HOME.distance,
+      polar: HOME.polar,
+      duration: 1.4,
+      ease: 'alt.inOut',
+      overwrite: true,
+      onComplete: () => {
+        this.flying = false
+      },
+    })
     gsap.to(this.rig.target, { y: 4, duration: 1.4, ease: 'alt.inOut' })
   }
 
@@ -291,6 +350,8 @@ export class MapScene {
       target.z + Math.cos(azimuth) * Math.sin(polar) * distance,
     )
     this.camera.lookAt(target)
+    // scripted camera moves (dive / zoom out) stay over Peru on their own
+    if (this.interactive && !this.flying) this.keepInWorld()
 
     // markers bob + hover scale
     for (const m of this.markers) {

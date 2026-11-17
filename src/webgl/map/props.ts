@@ -3,7 +3,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { project } from '../../data/geo'
 import { STOPS } from '../../data/stops'
 import { mulberry32 } from '../utils/noise'
-import { TITICACA, deptAt } from './peru'
+import { TITICACA, deptAt, peruSDF } from './peru'
 import { LAKE_Y, MAP_D, MAP_W, distToRiver, heightAt, slopeAt, zoneAt } from './terrain'
 
 type Uniforms = { uTime: { value: number } }
@@ -47,10 +47,11 @@ function nonIndexed(g: THREE.BufferGeometry) {
 
 type Avoid = { route: THREE.Vector2[] }
 
-function clearOf(x: number, z: number, avoid: Avoid, routeGap: number, stopGap: number) {
+function clearOf(x: number, z: number, avoid: Avoid, routeGap: number, stopGap: number, inPeru = true) {
   if (distToRiver(x, z) < 0.8) return false
-  // keep department borders clear so the lines read through the forest
-  if (deptAt(x, z).border < 0.9) return false
+  if (!inPeru) return true
+  // keep department borders and Peru's outline clear so the lines read through the forest
+  if (deptAt(x, z).border < 0.9 || peruSDF(x, z) > -0.7) return false
   for (const s of STOPS) if (Math.hypot(s.x - x, s.z - z) < (s.kind === 'stop' ? stopGap : stopGap * 0.5)) return false
   for (let i = 0; i < avoid.route.length; i += 2) {
     const p = avoid.route[i]
@@ -77,7 +78,7 @@ export function buildVegetation(avoid: Avoid, uniforms: Uniforms) {
   const can2 = colorize(nonIndexed(new THREE.IcosahedronGeometry(0.6, 0).translate(0.4, 2.15, 0.1)), '#ffffff')
   const treeMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, flatShading: true })
   windify(treeMat, uniforms, 0.05)
-  const TREE_MAX = 4200
+  const TREE_MAX = 8000
   const trees = new THREE.InstancedMesh(mergeGeometries([trunk, can1, can2])!, treeMat, TREE_MAX)
   trees.castShadow = true
   trees.receiveShadow = true
@@ -95,7 +96,7 @@ export function buildVegetation(avoid: Avoid, uniforms: Uniforms) {
   }
   const palmMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, flatShading: true })
   windify(palmMat, uniforms, 0.07)
-  const PALM_MAX = 500
+  const PALM_MAX = 900
   const palms = new THREE.InstancedMesh(mergeGeometries(palmParts)!, palmMat, PALM_MAX)
   palms.castShadow = true
 
@@ -103,7 +104,7 @@ export function buildVegetation(avoid: Avoid, uniforms: Uniforms) {
   const shrubGeo = new THREE.IcosahedronGeometry(0.45, 0).scale(1.3, 0.75, 1.3).translate(0, 0.3, 0)
   const shrubMat = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.95, flatShading: true })
   windify(shrubMat, uniforms, 0.05)
-  const SHRUB_MAX = 1400
+  const SHRUB_MAX = 2200
   const shrubs = new THREE.InstancedMesh(shrubGeo, shrubMat, SHRUB_MAX)
   shrubs.castShadow = true
 
@@ -113,7 +114,7 @@ export function buildVegetation(avoid: Avoid, uniforms: Uniforms) {
     colorize(nonIndexed(new THREE.IcosahedronGeometry(1, 0).scale(1.5, 0.45, 1.5).translate(0, 1.45, 0)), '#ffffff'),
   ])!
   const huarangoMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, flatShading: true })
-  const HUAR_MAX = 220
+  const HUAR_MAX = 320
   const huarangos = new THREE.InstancedMesh(huarango, huarangoMat, HUAR_MAX)
   huarangos.castShadow = true
   const cactusGeo = mergeGeometries([
@@ -121,12 +122,12 @@ export function buildVegetation(avoid: Avoid, uniforms: Uniforms) {
     nonIndexed(new THREE.CylinderGeometry(0.07, 0.07, 0.5, 6).rotateZ(Math.PI / 2).translate(0.2, 0.55, 0)),
     nonIndexed(new THREE.CylinderGeometry(0.07, 0.07, 0.4, 6).translate(0.42, 0.75, 0)),
   ])!
-  const CACTUS_MAX = 260
+  const CACTUS_MAX = 360
   const cacti = new THREE.InstancedMesh(cactusGeo, new THREE.MeshStandardMaterial({ color: '#5E7A42', roughness: 0.8, flatShading: true }), CACTUS_MAX)
   cacti.castShadow = true
 
   // rocks
-  const ROCK_MAX = 420
+  const ROCK_MAX = 600
   const rocks = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(0.5, 0), new THREE.MeshStandardMaterial({ color: '#9B8D79', roughness: 1, flatShading: true }), ROCK_MAX)
   rocks.castShadow = true
   rocks.receiveShadow = true
@@ -140,14 +141,17 @@ export function buildVegetation(avoid: Avoid, uniforms: Uniforms) {
     counts[k]++
   }
 
-  for (let k = 0; k < 60000; k++) {
+  // vegetation grows on Peru only — neighbours stay a clean sandy plain
+  for (let k = 0; k < 90000; k++) {
     const x = (rnd() - 0.5) * (MAP_W - 2)
     const z = (rnd() - 0.5) * (MAP_D - 2)
     const zone = zoneAt(x, z)
     if (zone === 'ocean' || zone === 'neighbor' || zone === 'lake' || zone === 'snow') continue
+    const inPeru = peruSDF(x, z) < 0
+    if (!inPeru) continue
     const r = rnd()
     if (zone === 'selva') {
-      if (!clearOf(x, z, avoid, 1.6, 3)) continue
+      if (!clearOf(x, z, avoid, 1.6, 3, inPeru)) continue
       if (slopeAt(x, z) > 1.5) continue
       if (r < 0.88 && counts.trees < TREE_MAX) {
         const sc = 0.75 + rnd() * 0.65
@@ -158,7 +162,7 @@ export function buildVegetation(avoid: Avoid, uniforms: Uniforms) {
       }
     } else if (zone === 'sierra' || zone === 'puna') {
       if (r > 0.12) continue
-      if (!clearOf(x, z, avoid, 1.4, 2.6)) continue
+      if (!clearOf(x, z, avoid, 1.4, 2.6, inPeru)) continue
       if (rnd() < 0.55 && counts.shrubs < SHRUB_MAX && slopeAt(x, z) < 1.4) {
         const sc = 0.6 + rnd() * 0.7
         place(shrubs, 'shrubs', x, z, s.set(sc, sc, sc), c.set(zone === 'puna' ? '#8C8A4E' : rnd() > 0.5 ? '#5E7A3A' : '#6F8743'))
@@ -170,7 +174,7 @@ export function buildVegetation(avoid: Avoid, uniforms: Uniforms) {
       }
     } else if (zone === 'coast') {
       if (r > 0.035) continue
-      if (!clearOf(x, z, avoid, 1.4, 2.6)) continue
+      if (!clearOf(x, z, avoid, 1.4, 2.6, inPeru)) continue
       if (rnd() < 0.55 && counts.huar < HUAR_MAX) {
         const sc = 0.6 + rnd() * 0.5
         place(huarangos, 'huar', x, z, s.set(sc, sc, sc), c.set(rnd() > 0.5 ? '#7C8F4A' : '#8E9A55'))
@@ -254,6 +258,45 @@ function palm(scale = 1) {
     g.add(leaf)
   }
   g.scale.setScalar(scale)
+  return shadowed(g)
+}
+
+/** Flagpole with a waving Peruvian flag (red · white · red). */
+function peruFlagPole(uniforms: Uniforms, height = 3.2) {
+  const g = new THREE.Group()
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, height, 8), std('#E9E4DA', { flatShading: false, roughness: 0.4, metalness: 0.3 }))
+  pole.position.y = height / 2
+  const knob = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), std('#E2A43A', { flatShading: false, metalness: 0.5, roughness: 0.3 }))
+  knob.position.y = height + 0.05
+  const cv = document.createElement('canvas')
+  cv.width = 96
+  cv.height = 64
+  const ctx = cv.getContext('2d')!
+  ctx.fillStyle = '#D91023'
+  ctx.fillRect(0, 0, 96, 64)
+  ctx.fillStyle = '#FFFFFF'
+  ctx.fillRect(32, 0, 32, 64)
+  const tex = new THREE.CanvasTexture(cv)
+  tex.colorSpace = THREE.SRGBColorSpace
+  const W = 1.5
+  const geo = new THREE.PlaneGeometry(W, W / 1.5, 16, 6)
+  geo.translate(W / 2, 0, 0) // hoist edge at x = 0
+  const mat = new THREE.MeshStandardMaterial({ map: tex, side: THREE.DoubleSide, roughness: 0.8 })
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.uTime = uniforms.uTime
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nuniform float uTime;')
+      .replace(
+        '#include <begin_vertex>',
+        `#include <begin_vertex>
+        float k = position.x / ${W.toFixed(2)};
+        transformed.z += sin(position.x * 4.2 - uTime * 5.) * .13 * k;
+        transformed.y += sin(position.x * 3.1 - uTime * 4.) * .04 * k;`,
+      )
+  }
+  const cloth = new THREE.Mesh(geo, mat)
+  cloth.position.set(0.05, height - W / 3 - 0.08, 0)
+  g.add(pole, knob, cloth)
   return shadowed(g)
 }
 
@@ -360,6 +403,14 @@ export function buildLandmarks(uniforms: Uniforms) {
     })
     for (let i = 0; i < 4; i++) plaza.add(box(0.5, 1.4 + rnd() * 1.4, 0.5, '#CFCAC0', 3.4 + (i % 2) * 0.7, 0, -1.4 + i * 0.8))
     group.add(at(shadowed(plaza), s.x + 0.4, s.z + 0.2, 0.2))
+    // the flag over the Plaza Mayor
+    group.add(at(peruFlagPole(uniforms, 3.4), s.x + 0.4, s.z + 0.9, -0.6))
+  }
+
+  // Tacna — the Paseo de la Bandera city flies a big one
+  {
+    const s = get('tacna')
+    group.add(at(peruFlagPole(uniforms, 2.8), s.x + 1.2, s.z - 0.6, -0.6))
   }
 
   // Ica — Huacachina oasis + dunes, and a Nazca hummingbird

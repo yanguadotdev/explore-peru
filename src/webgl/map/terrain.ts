@@ -4,21 +4,29 @@ import { clamp, fbm2, lerp, mulberry32, ridged2, smoothstep } from '../utils/noi
 import { DEPT_SEEDS, RIVERS, TITICACA, deptAt, inTiticaca, oceanSDF, peruSDF, spineInfo } from './peru'
 
 /*
-  Peru diorama terrain.
-  One height field over the whole board: Pacific to the west (shallows near the
-  coast), neighbouring countries as a low paper plain, and Peru raised as a
-  diorama — desert coast, the Andes (snow, altiplano, Titicaca), Amazon lowlands
-  and its rivers. Departments are weighted-Voronoi cells drawn on top.
+  Peru terrain — one continuous world.
+  The relief does not stop at the border: the Pacific to the west (shallows near
+  the coast), the Andes running on into Ecuador, Bolivia and Chile, and the
+  Amazon lowlands into Brazil and Colombia. Peru stands out by its outline and
+  departments (weighted-Voronoi cells); neighbours are slightly muted. The mesh
+  is dense over Peru and coarser towards the edges, which fade into haze.
 */
 
+/** detailed core (Peru) */
 export const MAP_W = 96
 export const MAP_D = 128
+/** whole world extent (coarser outside the core, fades into fog) */
+export const EXT_W = 360
+export const EXT_D = 420
 export const BASE_Y = -6
 /** sea level */
 export const WATER_Y = 0
-export const NEIGHBOR_Y = 0.9
 export const LAND_Y = 1.8
-export const LAKE_Y = 9.05
+/** neighbouring countries: a flat sandy plain below Peru */
+export const NEIGHBOR_Y = 0.9
+/** Peru stands proud of its neighbours, so its earthy edge shows (like a slab) */
+export const PERU_LIFT = 0.9
+export const LAKE_Y = 9.05 + PERU_LIFT
 
 export type Zone = 'ocean' | 'neighbor' | 'coast' | 'sierra' | 'puna' | 'snow' | 'selva' | 'lake'
 
@@ -31,11 +39,13 @@ class Grid {
   constructor(
     public step: number,
     fn: (x: number, z: number) => number,
-    public x0 = -MAP_W / 2 - 1,
-    public z0 = -MAP_D / 2 - 1,
+    w = MAP_W + 2,
+    d = MAP_D + 2,
+    public x0 = -w / 2,
+    public z0 = -d / 2,
   ) {
-    this.nx = Math.ceil((MAP_W + 2) / step) + 1
-    this.nz = Math.ceil((MAP_D + 2) / step) + 1
+    this.nx = Math.ceil(w / step) + 1
+    this.nz = Math.ceil(d / step) + 1
     this.data = new Float32Array(this.nx * this.nz)
     for (let j = 0; j < this.nz; j++)
       for (let i = 0; i < this.nx; i++) this.data[j * this.nx + i] = fn(this.x0 + i * step, this.z0 + j * step)
@@ -63,8 +73,8 @@ class Grid {
 
 // ------------------------------------------------------------------ base relief
 
-/** Peru relief before rivers/lake are carved. */
-function peruRelief(x: number, z: number) {
+/** Land relief (anywhere, not just Peru) before rivers/lake are carved. */
+function landRelief(x: number, z: number) {
   const { d, side } = spineInfo(x, z)
   const south = smoothstep(-20, 45, z) // the Andes widen and rise to the south
   const width = lerp(6.5, 13, south)
@@ -102,8 +112,8 @@ function getRiverSamples() {
     let y = Infinity
     for (const p of pts) {
       const inPeru = peruSDF(p.x, p.y) < 0
-      const ground = inPeru ? peruRelief(p.x, p.y) : NEIGHBOR_Y
-      y = Math.max(Math.min(y, ground - 0.25), inPeru ? 1.6 : 0.68)
+      const ground = inPeru ? landRelief(p.x, p.y) + PERU_LIFT : NEIGHBOR_Y
+      y = Math.max(Math.min(y, ground - 0.25), inPeru ? 1.6 + PERU_LIFT : 0.66)
       out.push({ x: p.x, z: p.y, y, w: r.width, ri })
     }
   })
@@ -131,9 +141,9 @@ function nearestRiver(x: number, z: number) {
 
 function zoneExact(x: number, z: number): Zone {
   if (oceanSDF(x, z) < 0) return 'ocean'
-  if (peruSDF(x, z) > 0) return 'neighbor'
+  if (Math.abs(x) > MAP_W / 2 + 2 || Math.abs(z) > MAP_D / 2 + 2 || peruSDF(x, z) > 0) return 'neighbor'
   if (inTiticaca(x, z) < 1) return 'lake'
-  const h = peruRelief(x, z)
+  const h = landRelief(x, z)
   if (h > 16.5) return 'snow'
   if (h > 9) return 'puna'
   const { d, side } = spineInfo(x, z)
@@ -144,8 +154,9 @@ function zoneExact(x: number, z: number): Zone {
 function heightExact(x: number, z: number) {
   const so = oceanSDF(x, z)
   if (so < 0) return WATER_Y - 0.35 - smoothstep(0, 9, -so) * 2.6
-  const sp = peruSDF(x, z)
-  let h = sp > 0 ? NEIGHBOR_Y + fbm2(x * 0.15, z * 0.15, 2) * 0.12 : peruRelief(x, z)
+  // Peru lies inside the core: skip the polygon test far away
+  const sp = Math.abs(x) < MAP_W / 2 + 2 && Math.abs(z) < MAP_D / 2 + 2 ? peruSDF(x, z) : 50
+  let h = sp > 0 ? NEIGHBOR_Y + fbm2(x * 0.15, z * 0.15, 2) * 0.1 : landRelief(x, z) + PERU_LIFT
   // rivers
   const r = nearestRiver(x, z)
   if (r) {
@@ -153,7 +164,7 @@ function heightExact(x: number, z: number) {
     h = lerp(h, Math.min(h, r.y + 0.35), smoothstep(r.w * 2.4 + 1.5, r.w * 0.6, r.d) * 0.7)
     h = lerp(h, r.y - 0.4, bank)
   }
-  // Titicaca
+  // Titicaca (Peruvian side)
   if (sp <= 0) {
     const e = inTiticaca(x, z)
     if (e < 1.5) h = lerp(h, LAKE_Y - 0.5, smoothstep(1.5, 1, e))
@@ -164,14 +175,31 @@ function heightExact(x: number, z: number) {
 let heightGrid: Grid | null = null
 let zoneGrid: Grid | null = null
 let riverGrid: Grid | null = null
+let heightOuter: Grid | null = null
+let zoneOuter: Grid | null = null
+let riverOuter: Grid | null = null
 const ZONES: Zone[] = ['ocean', 'neighbor', 'coast', 'sierra', 'puna', 'snow', 'selva', 'lake']
+const zoneIndex = (x: number, z: number) => ZONES.indexOf(zoneExact(x, z))
+const riverDist = (x: number, z: number) => nearestRiver(x, z)?.d ?? 99
 
-export const heightAt = (x: number, z: number) => (heightGrid ??= new Grid(0.4, heightExact)).get(x, z)
+/** inside the detailed core? */
+const inCore = (x: number, z: number) => Math.abs(x) <= MAP_W / 2 && Math.abs(z) <= MAP_D / 2
+
+export const heightAt = (x: number, z: number) =>
+  inCore(x, z)
+    ? (heightGrid ??= new Grid(0.4, heightExact)).get(x, z)
+    : (heightOuter ??= new Grid(2, heightExact, EXT_W + 4, EXT_D + 4)).get(x, z)
 export const zoneAt = (x: number, z: number): Zone =>
-  ZONES[(zoneGrid ??= new Grid(0.8, (gx, gz) => ZONES.indexOf(zoneExact(gx, gz)))).nearest(x, z)]
+  ZONES[
+    inCore(x, z)
+      ? (zoneGrid ??= new Grid(0.8, zoneIndex)).nearest(x, z)
+      : (zoneOuter ??= new Grid(2, zoneIndex, EXT_W + 4, EXT_D + 4)).nearest(x, z)
+  ]
 /** Distance to the nearest river bank (large when no river around). */
 export const distToRiver = (x: number, z: number) =>
-  (riverGrid ??= new Grid(0.8, (gx, gz) => nearestRiver(gx, gz)?.d ?? 99)).get(x, z)
+  inCore(x, z)
+    ? (riverGrid ??= new Grid(0.8, riverDist)).get(x, z)
+    : (riverOuter ??= new Grid(2, riverDist, EXT_W + 4, EXT_D + 4)).get(x, z)
 
 export function slopeAt(x: number, z: number) {
   const e = 0.6
@@ -184,40 +212,71 @@ export function slopeAt(x: number, z: number) {
 
 const C = {
   seabed: new THREE.Color('#CDBB8A'),
-  paper: new THREE.Color('#E7DCBC'),
-  paper2: new THREE.Color('#DCCFAB'),
-  dune: new THREE.Color('#DCC38C'),
-  dune2: new THREE.Color('#C9A56B'),
-  dry: new THREE.Color('#A99A62'),
-  sierra: new THREE.Color('#8E9A58'),
-  sierra2: new THREE.Color('#7C8A4C'),
-  rock: new THREE.Color('#8A7461'),
-  puna: new THREE.Color('#B9AA78'),
+  plain: new THREE.Color('#E6D4A6'),
+  plain2: new THREE.Color('#D9C38E'),
+  dune: new THREE.Color('#D9A465'),
+  dune2: new THREE.Color('#C9813F'),
+  dry: new THREE.Color('#B9844A'),
+  sierra: new THREE.Color('#8E9A48'),
+  sierra2: new THREE.Color('#6C8A38'),
+  rock: new THREE.Color('#A0643C'),
+  puna: new THREE.Color('#BF9E5C'),
   snow: new THREE.Color('#F4F2EC'),
-  selva: new THREE.Color('#2F6C35'),
-  selva2: new THREE.Color('#3E7F3B'),
-  ceja: new THREE.Color('#2A5A30'),
+  selva: new THREE.Color('#4E8A34'),
+  selva2: new THREE.Color('#6A9A3A'),
+  ceja: new THREE.Color('#3A7030'),
   reeds: new THREE.Color('#9AA35A'),
   soil: new THREE.Color('#9A6240'),
 }
 
 const deptTint = (i: number) => new THREE.Color().setHSL(((i * 0.61803) % 1 + 1) % 1, 0.45, 0.6)
 
+/** Axis positions: 0.4 apart over the core, easing out to 2.2 towards the world edge. */
+function axis(coreHalf: number, extHalf: number) {
+  const out: number[] = []
+  let v = -extHalf
+  while (v < extHalf) {
+    out.push(v)
+    const t = smoothstep(coreHalf + 16, coreHalf + 1, Math.abs(v))
+    v += lerp(2.2, 0.4, t)
+  }
+  out.push(extHalf)
+  return out
+}
+
 export function buildTerrain() {
-  const segX = 240
-  const segZ = 320
-  const geo = new THREE.PlaneGeometry(MAP_W, MAP_D, segX, segZ)
-  geo.rotateX(-Math.PI / 2)
+  const xs = axis(MAP_W / 2, EXT_W / 2)
+  const zs = axis(MAP_D / 2, EXT_D / 2)
+  const nx = xs.length
+  const n = nx * zs.length
+  const posArr = new Float32Array(n * 3)
+  for (let j = 0; j < zs.length; j++)
+    for (let i = 0; i < nx; i++) {
+      const k = (j * nx + i) * 3
+      const x = xs[i]
+      const z = zs[j]
+      posArr[k] = x
+      // exact relief outside the core (the mesh is coarse there anyway)
+      posArr[k + 1] = inCore(x, z) ? heightAt(x, z) : heightExact(x, z)
+      posArr[k + 2] = z
+    }
+  const idx: number[] = []
+  for (let j = 0; j < zs.length - 1; j++)
+    for (let i = 0; i < nx - 1; i++) {
+      const a = j * nx + i
+      idx.push(a, a + nx, a + 1, a + 1, a + nx, a + nx + 1)
+    }
+  const geo = new THREE.BufferGeometry()
+  geo.setAttribute('position', new THREE.BufferAttribute(posArr, 3))
+  geo.setIndex(idx)
+  geo.computeVertexNormals()
   const pos = geo.attributes.position as THREE.BufferAttribute
-  const n = pos.count
   const colors = new Float32Array(n * 3)
   const aDept = new Float32Array(n)
   const aBorder = new Float32Array(n)
   const aInside = new Float32Array(n)
+  const aPeru = new Float32Array(n)
   const c = new THREE.Color()
-
-  for (let i = 0; i < n; i++) pos.setY(i, heightAt(pos.getX(i), pos.getZ(i)))
-  geo.computeVertexNormals()
   const nrm = geo.attributes.normal as THREE.BufferAttribute
 
   for (let i = 0; i < n; i++) {
@@ -226,32 +285,35 @@ export function buildTerrain() {
     const h = pos.getY(i)
     const slope = 1 - nrm.getY(i)
     const v = fbm2(x * 0.12, z * 0.12, 3) + 0.5
-    const zone = zoneAt(x, z)
+    const zone = inCore(x, z) ? zoneAt(x, z) : zoneExact(x, z)
+    // Peru lies well inside the core, so skip the polygon test far out
+    const sp = Math.abs(x) < MAP_W / 2 + 4 && Math.abs(z) < MAP_D / 2 + 4 ? peruSDF(x, z) : 50
     switch (zone) {
       case 'ocean':
         c.copy(C.seabed)
         break
       case 'neighbor':
-        c.copy(C.paper).lerp(C.paper2, v)
+        c.copy(C.plain).lerp(C.plain2, v)
         break
       case 'coast':
         c.copy(C.dune).lerp(C.dune2, v)
         break
       case 'selva':
-        c.copy(C.selva).lerp(C.selva2, v).lerp(C.ceja, smoothstep(3.2, 6, h))
+        c.copy(C.selva).lerp(C.selva2, v).lerp(C.ceja, smoothstep(3.2 + PERU_LIFT, 6 + PERU_LIFT, h))
         break
       case 'lake':
         c.copy(C.reeds)
         break
       default: {
         // Andes: dry slopes → green valleys → puna → snow
-        c.copy(C.dry).lerp(C.sierra, v).lerp(C.sierra2, smoothstep(5, 8, h) * 0.6)
-        c.lerp(C.puna, smoothstep(8.5, 11.5, h))
+        const hh = h - PERU_LIFT
+        c.copy(C.dry).lerp(C.sierra, v).lerp(C.sierra2, smoothstep(5, 8, hh) * 0.6)
+        c.lerp(C.puna, smoothstep(8.5, 11.5, hh))
         c.lerp(C.rock, smoothstep(0.35, 0.65, slope) * 0.8)
-        c.lerp(C.snow, smoothstep(16, 17.5, h))
+        c.lerp(C.snow, smoothstep(16, 17.5, hh))
       }
     }
-    const inside = zone !== 'ocean' && zone !== 'neighbor' ? 1 : 0
+    const inside = zone !== 'ocean' && zone !== 'neighbor' && sp < 0 ? 1 : 0
     if (inside) {
       const r = distToRiver(x, z)
       c.lerp(C.selva2, smoothstep(2.4, 0.6, r) * 0.35)
@@ -263,9 +325,10 @@ export function buildTerrain() {
       aDept[i] = -10
       aBorder[i] = 9
     }
-    // steep cliffs at the diorama edge read as earth
+    // steep cliffs read as earth
     if (zone !== 'ocean') c.lerp(C.soil, smoothstep(0.8, 0.98, slope) * 0.7)
     aInside[i] = inside
+    aPeru[i] = clamp(sp, -4, 4)
     colors[i * 3] = c.r
     colors[i * 3 + 1] = c.g
     colors[i * 3 + 2] = c.b
@@ -274,6 +337,7 @@ export function buildTerrain() {
   geo.setAttribute('aDept', new THREE.BufferAttribute(aDept, 1))
   geo.setAttribute('aBorder', new THREE.BufferAttribute(aBorder, 1))
   geo.setAttribute('aInside', new THREE.BufferAttribute(aInside, 1))
+  geo.setAttribute('aPeru', new THREE.BufferAttribute(aPeru, 1))
 
   const uniforms = { uHi: { value: -100 }, uHiAmt: { value: 0 } }
   const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0 })
@@ -287,7 +351,9 @@ export function buildTerrain() {
         attribute float aDept;
         attribute float aBorder;
         attribute float aInside;
+        attribute float aPeru;
         uniform float uHi;
+        varying float vPeru;
         varying float vH;
         varying float vBorder;
         varying float vInside;
@@ -299,6 +365,7 @@ export function buildTerrain() {
         vH = position.y;
         vBorder = aBorder;
         vInside = aInside;
+        vPeru = aPeru;
         vHi = (1. - step(.5, abs(aDept - uHi))) * aInside;`,
       )
     shader.fragmentShader = shader.fragmentShader
@@ -310,6 +377,7 @@ export function buildTerrain() {
         varying float vBorder;
         varying float vInside;
         varying float vHi;
+        varying float vPeru;
         ${NOISE}`,
       )
       .replace(
@@ -322,8 +390,11 @@ export function buildTerrain() {
         // department borders
         // vBorder is V-shaped (|f2 - f1|): vertices either side of a border sit
         // around .3–.4 on this 0.4-unit mesh, so the band must cover that range
-        float border = 1. - smoothstep(.34, .52, vBorder);
-        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.24, .15, .09), border * vInside * .8);
+        float border = 1. - smoothstep(.38, .58, vBorder);
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.2, .13, .08), border * vInside * .9);
+        // Peru's outline over the continuous world (signed distance → crisp line)
+        float outline = 1. - smoothstep(.06, .32, abs(vPeru));
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.33, .14, .08), outline * .35 * step(.3, vH));
         // hovered / selected department glows warm
         diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 1.18 + vec3(.1, .07, .01), vHi * uHiAmt);
         `,
@@ -335,129 +406,19 @@ export function buildTerrain() {
   return { mesh, uniforms }
 }
 
-/** Layered soil skirt around the board; the sea shows as a water band. */
-export function buildSkirt() {
-  const bands = [
-    { level: (h: number) => h - 0.7, color: '#4A3122' },
-    { level: () => -2.2, color: '#9B5A36' },
-    { level: () => -3.5, color: '#C48D52' },
-    { level: () => -4.7, color: '#7A4A2E' },
-    { level: () => BASE_Y, color: '#4B2F1F' },
-  ]
-  const water = new THREE.Color('#3C7FA8')
-  const pos: number[] = []
-  const col: number[] = []
-  const nrm: number[] = []
-  const steps = 200
-  const W = MAP_W / 2
-  const D = MAP_D / 2
-  const edges: [THREE.Vector2, THREE.Vector2, THREE.Vector3][] = [
-    [new THREE.Vector2(-W, D), new THREE.Vector2(W, D), new THREE.Vector3(0, 0, 1)],
-    [new THREE.Vector2(W, D), new THREE.Vector2(W, -D), new THREE.Vector3(1, 0, 0)],
-    [new THREE.Vector2(W, -D), new THREE.Vector2(-W, -D), new THREE.Vector3(0, 0, -1)],
-    [new THREE.Vector2(-W, -D), new THREE.Vector2(-W, D), new THREE.Vector3(-1, 0, 0)],
-  ]
-  const c = new THREE.Color()
-  const quad = (p0: THREE.Vector2, p1: THREE.Vector2, t0: number, t1: number, b0: number, b1: number, n: THREE.Vector3, color: THREE.Color) => {
-    pos.push(p0.x, t0, p0.y, p0.x, b0, p0.y, p1.x, t1, p1.y, p1.x, t1, p1.y, p0.x, b0, p0.y, p1.x, b1, p1.y)
-    for (let k = 0; k < 6; k++) {
-      col.push(color.r, color.g, color.b)
-      nrm.push(n.x, n.y, n.z)
-    }
-  }
-  for (const [a, b, n] of edges) {
-    for (let s = 0; s < steps; s++) {
-      const p0 = a.clone().lerp(b, s / steps)
-      const p1 = a.clone().lerp(b, (s + 1) / steps)
-      const h0 = heightAt(p0.x, p0.y)
-      const h1 = heightAt(p1.x, p1.y)
-      let top0 = Math.max(h0, WATER_Y)
-      let top1 = Math.max(h1, WATER_Y)
-      // sea: a glassy water band down to the sea floor
-      if (h0 < WATER_Y || h1 < WATER_Y) {
-        quad(p0, p1, top0, top1, Math.min(h0, top0), Math.min(h1, top1), n, water)
-        top0 = Math.min(h0, top0)
-        top1 = Math.min(h1, top1)
-      }
-      for (let bi = 0; bi < bands.length; bi++) {
-        const band = bands[bi]
-        const last = bi === bands.length - 1
-        const w0 = last ? 0 : Math.sin(p0.x * 0.21 + p0.y * 0.17 + bi * 1.7) * 0.22
-        const w1 = last ? 0 : Math.sin(p1.x * 0.21 + p1.y * 0.17 + bi * 1.7) * 0.22
-        const bot0 = Math.max(BASE_Y, Math.min(top0, band.level(h0) + w0))
-        const bot1 = Math.max(BASE_Y, Math.min(top1, band.level(h1) + w1))
-        c.set(band.color)
-        quad(p0, p1, top0, top1, bot0, bot1, n, c)
-        top0 = bot0
-        top1 = bot1
-      }
-    }
-  }
-  const geo = new THREE.BufferGeometry()
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
-  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3))
-  geo.setAttribute('normal', new THREE.Float32BufferAttribute(nrm, 3))
-  const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, side: THREE.DoubleSide }))
-  mesh.castShadow = true
-  mesh.receiveShadow = true
-  return mesh
-}
-
-/** Paper table the diorama rests on: contour lines + contact shadow. */
-export function buildPaper() {
-  const mat = new THREE.ShaderMaterial({
-    uniforms: {
-      uPaper: { value: new THREE.Color('#EDE3CC') },
-      uInk: { value: new THREE.Color('#6B4A33') },
-      uShadow: { value: new THREE.Color('#5E4A36') },
-      uSize: { value: new THREE.Vector2(MAP_W, MAP_D) },
-    },
-    vertexShader: /* glsl */ `
-      varying vec3 vWorld;
-      void main() {
-        vec4 wp = modelMatrix * vec4(position, 1.);
-        vWorld = wp.xyz;
-        gl_Position = projectionMatrix * viewMatrix * wp;
-      }`,
-    fragmentShader: /* glsl */ `
-      varying vec3 vWorld;
-      uniform vec3 uPaper;
-      uniform vec3 uInk;
-      uniform vec3 uShadow;
-      uniform vec2 uSize;
-      ${NOISE}
-      float sdBox(vec2 p, vec2 b) { vec2 d = abs(p) - b; return length(max(d, 0.)) + min(max(d.x, d.y), 0.); }
-      void main() {
-        vec2 p = vWorld.xz;
-        float h = fbm(p * .012 + 7.) * 24.;
-        float line = 1. - smoothstep(0., fwidth(h) * 1.3, abs(fract(h - .5) - .5));
-        float fade = smoothstep(300., 80., length(p));
-        vec3 col = mix(uPaper, uInk, line * .16 * fade);
-        float d = sdBox(p - vec2(3., 4.), uSize * .5);
-        col = mix(col, uShadow, smoothstep(16., -2., d) * .32);
-        gl_FragColor = vec4(col, 1.);
-        #include <colorspace_fragment>
-      }`,
-  })
-  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), mat)
-  mesh.rotation.x = -Math.PI / 2
-  mesh.position.y = BASE_Y - 0.02
-  return mesh
-}
-
 // ------------------------------------------------------------------ water
 
 /** Heights as a texture so the sea shader knows the depth (shallows + shore foam). */
 function heightTexture() {
-  const step = 0.4
-  const nx = Math.ceil(MAP_W / step) + 1
-  const nz = Math.ceil(MAP_D / step) + 1
+  const step = 0.9
+  const nx = Math.ceil(EXT_W / step) + 1
+  const nz = Math.ceil(EXT_D / step) + 1
   const data = new Uint16Array(nx * nz)
   for (let j = 0; j < nz; j++)
     for (let i = 0; i < nx; i++) {
-      // row 0 ↔ uv.y = 0 ↔ the south edge (z = +MAP_D/2) once the plane lies flat
-      const x = -MAP_W / 2 + i * step
-      const z = MAP_D / 2 - j * step
+      // row 0 ↔ uv.y = 0 ↔ the south edge (z = +EXT_D/2) once the plane lies flat
+      const x = -EXT_W / 2 + i * step
+      const z = EXT_D / 2 - j * step
       data[j * nx + i] = THREE.DataUtils.toHalfFloat(heightAt(x, z))
     }
   const tex = new THREE.DataTexture(data, nx, nz, THREE.RedFormat, THREE.HalfFloatType)
@@ -468,14 +429,20 @@ function heightTexture() {
 }
 
 const WATER_VERT = /* glsl */ `
+#include <fog_pars_vertex>
 varying vec2 vUv;
 varying vec3 vWorld;
 void main() {
   vUv = uv;
   vec4 wp = modelMatrix * vec4(position, 1.);
   vWorld = wp.xyz;
-  gl_Position = projectionMatrix * viewMatrix * wp;
+  vec4 mvPosition = viewMatrix * wp;
+  gl_Position = projectionMatrix * mvPosition;
+  #include <fog_vertex>
 }`
+
+/** Scene fog for hand-written water shaders (the far world fades into haze). */
+const fogUniforms = <T extends Record<string, THREE.IUniform>>(u: T) => ({ ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog), ...u })
 
 export function buildWater() {
   const group = new THREE.Group()
@@ -484,7 +451,8 @@ export function buildWater() {
   // ---- Pacific
   const sea = new THREE.ShaderMaterial({
     transparent: true,
-    uniforms: {
+    fog: true,
+    uniforms: fogUniforms({
       uTime: time,
       uHeights: { value: heightTexture() },
       uLevel: { value: WATER_Y },
@@ -492,9 +460,10 @@ export function buildWater() {
       uMid: { value: new THREE.Color('#3E86B8') },
       uShallow: { value: new THREE.Color('#79C3C6') },
       uFoam: { value: new THREE.Color('#F6F3E8') },
-    },
+    }),
     vertexShader: WATER_VERT,
     fragmentShader: /* glsl */ `
+      #include <fog_pars_fragment>
       varying vec2 vUv;
       varying vec3 vWorld;
       uniform float uTime;
@@ -521,9 +490,10 @@ export function buildWater() {
         col = mix(col, uFoam, shore * .85);
         gl_FragColor = vec4(col, .95);
         #include <colorspace_fragment>
+        #include <fog_fragment>
       }`,
   })
-  const seaMesh = new THREE.Mesh(new THREE.PlaneGeometry(MAP_W, MAP_D), sea)
+  const seaMesh = new THREE.Mesh(new THREE.PlaneGeometry(EXT_W, EXT_D), sea)
   seaMesh.rotation.x = -Math.PI / 2
   seaMesh.position.y = WATER_Y
   seaMesh.receiveShadow = true
@@ -532,9 +502,11 @@ export function buildWater() {
   // ---- Lake Titicaca
   const lakeMat = new THREE.ShaderMaterial({
     transparent: true,
-    uniforms: { uTime: time, uDeep: { value: new THREE.Color('#2F6FA6') }, uShallow: { value: new THREE.Color('#6DB7C8') } },
+    fog: true,
+    uniforms: fogUniforms({ uTime: time, uDeep: { value: new THREE.Color('#2F6FA6') }, uShallow: { value: new THREE.Color('#6DB7C8') } }),
     vertexShader: WATER_VERT,
     fragmentShader: /* glsl */ `
+      #include <fog_pars_fragment>
       varying vec2 vUv;
       varying vec3 vWorld;
       uniform float uTime;
@@ -548,6 +520,7 @@ export function buildWater() {
         col += smoothstep(.75, .82, fbm(vWorld.xz * 1.1 + uTime * .08)) * .15;
         gl_FragColor = vec4(col, smoothstep(1., .94, r));
         #include <colorspace_fragment>
+        #include <fog_fragment>
       }`,
   })
   const lake = new THREE.Mesh(new THREE.CircleGeometry(1, 64), lakeMat)
@@ -561,9 +534,11 @@ export function buildWater() {
   const riverMat = new THREE.ShaderMaterial({
     transparent: true,
     side: THREE.DoubleSide,
-    uniforms: { uTime: time, uDeep: { value: new THREE.Color('#3A7FA4') }, uShallow: { value: new THREE.Color('#86BFC1') } },
+    fog: true,
+    uniforms: fogUniforms({ uTime: time, uDeep: { value: new THREE.Color('#3A7FA4') }, uShallow: { value: new THREE.Color('#86BFC1') } }),
     vertexShader: WATER_VERT,
     fragmentShader: /* glsl */ `
+      #include <fog_pars_fragment>
       varying vec2 vUv;
       varying vec3 vWorld;
       uniform float uTime;
@@ -576,6 +551,7 @@ export function buildWater() {
         col += smoothstep(.62, .7, fbm(vec2(vUv.x * .4 - uTime * .8, vUv.y * 6.))) * .14;
         gl_FragColor = vec4(col, smoothstep(1., .82, across) * .95);
         #include <colorspace_fragment>
+        #include <fog_fragment>
       }`,
   })
   const samples = getRiverSamples()
