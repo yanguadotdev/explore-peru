@@ -241,7 +241,7 @@
 
 .stage {
   position: relative;
-  height: 420vh;
+  height: 520vh;
 }
 
 .sticky {
@@ -623,22 +623,11 @@
   background: var(--paper);
 }
 
-.tornCream {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: -88px;
-  width: 100%;
-  height: 90px;
-  color: var(--paper);
-  display: block;
-}
-
 .storiesHead {
   display: grid;
   justify-items: center;
   text-align: center;
-  padding: 14vh 24px 10vh;
+  padding: 2vh 24px 10vh;
 }
 
 .storiesScript {

@@ -34,42 +34,6 @@ const fmt = (n: number) => n.toLocaleString('es')
 
 // ------------------------------------------------------------------ helpers
 
-function mulberry32(a: number) {
-  return () => {
-    a |= 0
-    a = (a + 0x6d2b79f5) | 0
-    let t = Math.imul(a ^ (a >>> 15), 1 | a)
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
-}
-
-/** Ripped-paper edge: the filled area is BELOW a jagged line (viewBox 1440×90). */
-function tornPath(seed: number) {
-  const rnd = mulberry32(seed)
-  const W = 1440
-  const H = 90
-  let d = `M0 ${H} L0 ${H * 0.6}`
-  let x = 0
-  while (x < W) {
-    x = Math.min(W, x + 6 + rnd() * 22)
-    const wave = Math.sin(x * 0.006 + seed) * 14 + Math.sin(x * 0.021 + seed * 2) * 7
-    const chip = rnd() < 0.12 ? -rnd() * 26 : 0
-    const y = H * 0.55 + wave + chip + (rnd() - 0.5) * 10
-    d += ` L${x.toFixed(1)} ${Math.max(2, Math.min(H - 4, y)).toFixed(1)}`
-  }
-  return `${d} L${W} ${H} Z`
-}
-
-function Torn({ seed, className }: { seed: number; className?: string }) {
-  const d = useMemo(() => tornPath(seed), [seed])
-  return (
-    <svg className={className} viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true">
-      <path d={d} fill="currentColor" />
-    </svg>
-  )
-}
-
 const near = (stop: Stop, n: number) =>
   STOPS.filter((o) => o.id !== stop.id)
     .map((o) => ({ o, d: Math.hypot(o.x - stop.x, o.z - stop.z) }))
@@ -244,7 +208,7 @@ export function RegionPage() {
     const raf = (t: number) => l.raf(t * 1000)
     gsap.ticker.add(raf)
 
-    let liquidRef: LiquidFill | null = null
+    const liquids: LiquidFill[] = []
     const ctx = gsap.context(() => {
       const q = gsap.utils.selector(ct)
       const vh = () => window.innerHeight
@@ -287,8 +251,11 @@ export function RegionPage() {
       // ---- stage: hero → postcard → headline (word by word) → liquid brown fill → photos
       const stage = q('[data-stage]')[0]
       const liquid = new LiquidFill(q('[data-liquid]')[0] as HTMLCanvasElement, '#7a4a2e')
-      liquidRef = liquid
+      // a second, cream flood closes the section and hands over to the stories
+      const liquidOut = new LiquidFill(q('[data-liquid-out]')[0] as HTMLCanvasElement, '#ede3cc')
+      liquids.push(liquid, liquidOut)
       const fill = { p: 0 }
+      const fillOut = { p: 0 }
       const st = gsap.timeline({ defaults: { ease: 'none' }, scrollTrigger: { trigger: stage, scroller: sc, start: 'top top', end: 'bottom bottom', scrub: 0.6 } })
       st.to(q('[data-hero]'), { scale: 0.62, rotate: -5, yPercent: -18, borderRadius: 18, duration: 0.7 }, 0)
         .to(q('[data-hero]'), { yPercent: -120, rotate: -9, duration: 0.6, ease: 'power1.in' }, 0.55)
@@ -309,6 +276,8 @@ export function RegionPage() {
           .fromTo(f, { y: () => vh() * 0.45 * speed, rotate: (i % 2 ? 6 : -6) }, { y: () => -vh() * 0.38 * speed, rotate: i % 2 ? -3 : 3, duration: 1.7 }, 1.95)
       })
       st.fromTo(q('[data-icon-float]'), { autoAlpha: 0, y: () => vh() * 0.7, rotate: -10 }, { autoAlpha: 1, y: () => -vh() * 0.2, rotate: 6, duration: 1.7 }, 2.05)
+        // end of the section: the cream rises over the brown with the same liquid edge
+        .to(fillOut, { p: 1.3, duration: 1, ease: 'power1.inOut', onUpdate: () => (liquidOut.progress = fillOut.p) }, 3.2)
 
       // ---- stories heading
       gsap.fromTo(q('[data-stories-head] [data-word]'), { yPercent: 110 }, {
@@ -374,7 +343,7 @@ export function RegionPage() {
     ScrollTrigger.refresh()
     return () => {
       ctx.revert()
-      liquidRef?.dispose()
+      liquids.forEach((l) => l.dispose())
       intro.current = null
       gsap.ticker.remove(raf)
       l.destroy()
@@ -545,12 +514,13 @@ function RegionContent({ stop, lenis }: { stop: Stop; lenis: React.RefObject<Len
               <StopIcon icon={stop.icon} size={150} />
             </span>
           </div>
+
+          <canvas className={s.liquid} data-liquid-out aria-hidden="true" />
         </div>
       </section>
 
       {/* ---- stories */}
       <section className={s.stories} data-sec="stories">
-        <Torn seed={stop.altitude + 3} className={s.tornCream} />
         <div className={s.storiesHead} data-stories-head>
           <span className={`script ${s.storiesScript}`} data-fade>
             Imperdibles en {stop.name}

@@ -35,7 +35,7 @@ de portfolio pensada para que viajeros de otros países exploren el mapa y sus c
    - Al hacer scroll la foto se encoge como una postal, sube un titular gigante que
      aparece palabra por palabra, y un relleno marrón con borde líquido de ruido (técnica de
      IronHill, de Codegrid) inunda la pantalla; el titular se vuelve a escribir en crema entre
-     fotos flotando.
+     fotos flotando, y al cerrar la sección el crema sube con el mismo borde líquido.
    - "Historias del camino": una tarjeta que crece a pantalla completa y se vuelve un slider con
      las tres curiosidades.
    - Desvíos a las regiones vecinas y una tarjeta hacia la siguiente región.
