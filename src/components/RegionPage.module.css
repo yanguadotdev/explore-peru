@@ -254,7 +254,8 @@
 
 .stage {
   position: relative;
-  height: 540vh;
+  /* 1 timeline unit = 1vh of scroll (timeline ≈ 4 units) */
+  height: 500vh;
 }
 
 .sticky {
@@ -550,6 +551,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
+  background: var(--brown);
   /* own stacking layer, so the closing cream flood covers the photos too */
   isolation: isolate;
 }
@@ -626,7 +628,10 @@
 
 .stories {
   position: relative;
-  background: var(--paper);
+  z-index: 1;
+  /* the heading rides in over the last half-screen of the cream flood (transparent
+     here, so the flood stays visible behind it) instead of after a blank screen */
+  margin-top: -50vh;
 }
 
 .storiesHead {
@@ -662,6 +667,7 @@
 .grow {
   position: relative;
   height: 280vh;
+  background: var(--paper);
 }
 
 .growSticky {

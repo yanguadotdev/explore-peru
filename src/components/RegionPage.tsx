@@ -69,6 +69,51 @@ function Words({ text, className }: { text: string; className?: string }) {
   )
 }
 
+/**
+ * Paints the text of `root` (and the Peru flag marks) into a canvas the size of
+ * `frame`, at the exact positions the DOM lays them out — a WebGL twin of the
+ * headline that the liquid edge can mask pixel-perfectly.
+ */
+function rasterize(root: HTMLElement, frame: HTMLElement) {
+  const box = frame.getBoundingClientRect()
+  const dpr = Math.min(window.devicePixelRatio, 2)
+  const c = document.createElement('canvas')
+  c.width = Math.round(box.width * dpr)
+  c.height = Math.round(box.height * dpr)
+  const g = c.getContext('2d')!
+  g.scale(dpr, dpr)
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+  const range = document.createRange()
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    const raw = n.textContent ?? ''
+    if (!raw.trim() || !n.parentElement) continue
+    const cs = getComputedStyle(n.parentElement)
+    const text = (cs.textTransform === 'uppercase' ? raw.toUpperCase() : raw).trim()
+    range.selectNodeContents(n)
+    const r = range.getBoundingClientRect()
+    g.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`
+    g.letterSpacing = cs.letterSpacing === 'normal' ? '0px' : cs.letterSpacing
+    g.fillStyle = cs.color
+    g.textBaseline = 'alphabetic'
+    const m = g.measureText(text)
+    const y = r.top - box.top + (r.height - (m.fontBoundingBoxAscent + m.fontBoundingBoxDescent)) / 2 + m.fontBoundingBoxAscent
+    // collapsed whitespace is not part of the range box: it starts at the first glyph
+    g.fillText(text, r.left - box.left, y)
+  }
+  root.querySelectorAll('svg.peru-flag').forEach((svg) => {
+    const r = svg.getBoundingClientRect()
+    const x = r.left - box.left
+    const y = r.top - box.top
+    const w = r.width / 3
+    g.fillStyle = '#D91023'
+    g.fillRect(x, y, w, r.height)
+    g.fillRect(x + 2 * w, y, w, r.height)
+    g.fillStyle = '#FFFFFF'
+    g.fillRect(x + w, y, w, r.height)
+  })
+  return c
+}
+
 /** Plain word spans for scroll-scrubbed, word-by-word opacity reveals. */
 function FadeWords({ text }: { text: string }) {
   const words = text.split(' ')
@@ -269,6 +314,7 @@ export function RegionPage() {
     gsap.ticker.add(raf)
 
     const liquids: LiquidFill[] = []
+    const cleanups: (() => void)[] = []
     const ctx = gsap.context(() => {
       const q = gsap.utils.selector(ct)
       const vh = () => window.innerHeight
@@ -310,7 +356,23 @@ export function RegionPage() {
 
       // ---- stage: hero → postcard → headline (word by word) → liquid brown fill → photos
       const stage = q('[data-stage]')[0]
-      const liquid = new LiquidFill(q('[data-liquid]')[0] as HTMLCanvasElement, '#7a4a2e')
+      const coverCanvas = q('[data-liquid]')[0] as HTMLCanvasElement
+      const liquid = new LiquidFill(coverCanvas, '#ede3cc', true)
+      const creamHead = q('[data-cream-head]')[0]
+      const brown = q('[data-brown]')[0]
+      const sticky = stage.querySelector<HTMLElement>('[data-sticky]')!
+      // swap the DOM cream headline for its WebGL twin while the liquid is on screen
+      let covering = false
+      const setCovering = (on: boolean) => {
+        if (on === covering) return
+        covering = on
+        if (on) liquid.setTexture(rasterize(creamHead, sticky))
+        gsap.set(creamHead, { autoAlpha: on ? 0 : 1 })
+        gsap.set([brown, coverCanvas], { autoAlpha: on ? 1 : 0 })
+      }
+      const onResize = () => covering && liquid.setTexture(rasterize(creamHead, sticky))
+      window.addEventListener('resize', onResize)
+      cleanups.push(() => window.removeEventListener('resize', onResize))
       // a second, cream flood closes the section and hands over to the stories
       const liquidOut = new LiquidFill(q('[data-liquid-out]')[0] as HTMLCanvasElement, '#ede3cc')
       liquids.push(liquid, liquidOut)
@@ -327,19 +389,25 @@ export function RegionPage() {
         // cream headline: each word fades in as it comes up
         .fromTo(q('[data-cream-head] [data-kick]'), { autoAlpha: 0.15 }, { autoAlpha: 1, duration: 0.2 }, 0.45)
         .fromTo(q('[data-cream-head] [data-fw]'), { opacity: 0.15 }, { opacity: 1, duration: 0.1, stagger: { amount: 0.45 } }, 0.5)
-        // the brown fill rises from the bottom behind a noisy, liquid edge
-        .to(fill, { p: 1.3, duration: 1, ease: 'power1.inOut', onUpdate: () => (liquid.progress = fill.p) }, T + 0.85)
-        .set(q('[data-cream-head]'), { autoAlpha: 0 }, T + 1.85)
-        // then the cream headline is written again, word by word, on the brown
-        .fromTo(q('[data-brown] [data-kick]'), { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.2 }, T + 1.65)
-        .fromTo(q('[data-brown] [data-fw]'), { opacity: 0 }, { opacity: 1, duration: 0.12, stagger: { amount: 0.6 } }, T + 1.7)
+        // the brown floods up behind a noisy, liquid edge; the headline stays put and
+        // simply changes colour under it (cream sheet in WebGL over the brown DOM layer)
+        .to(fill, {
+          p: 1.3,
+          duration: 1.2,
+          ease: 'power1.inOut',
+          onUpdate: () => {
+            setCovering(fill.p > 0.001)
+            liquid.progress = fill.p
+          },
+        }, T + 0.85)
+      // the photos ride up with (and only show inside) the brown
       q('[data-float]').forEach((f, i) => {
         const speed = [1, 1.5, 0.8, 1.25, 1.1][i % 5]
-        st.fromTo(f, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.15 }, T + 1.55 + i * 0.06)
-          .fromTo(f, { y: () => vh() * 0.45 * speed, rotate: (i % 2 ? 6 : -6) }, { y: () => -vh() * 0.38 * speed, rotate: i % 2 ? -3 : 3, duration: 1.7 }, T + 1.55)
+        st.fromTo(f, { y: () => vh() * 0.6 * speed, rotate: (i % 2 ? 6 : -6) }, { y: () => -vh() * 0.3 * speed, rotate: i % 2 ? -3 : 3, duration: 2.2 }, T + 0.85)
       })
       // end of the section: the cream rises over the brown with the same liquid edge
-      st.to(fillOut, { p: 1.3, duration: 1, ease: 'power1.inOut', onUpdate: () => (liquidOut.progress = fillOut.p) }, T + 2.8)
+      // (linear and quick, so it stays ahead of the stories heading that scrolls in over it)
+      st.to(fillOut, { p: 1.3, duration: 0.8, onUpdate: () => (liquidOut.progress = fillOut.p) }, T + 2.6)
 
       // ---- stories heading
       gsap.fromTo(q('[data-stories-head] [data-word]'), { yPercent: 110 }, {
@@ -406,6 +474,7 @@ export function RegionPage() {
     return () => {
       ctx.revert()
       liquids.forEach((l) => l.dispose())
+      cleanups.forEach((c) => c())
       intro.current = null
       gsap.ticker.remove(raf)
       l.destroy()
@@ -497,7 +566,7 @@ function RegionContent({ stop, lenis }: { stop: Stop; lenis: React.RefObject<Len
 
       {/* ---- stage: hero, cream headline, liquid brown fill */}
       <section className={s.stage} data-stage data-sec="welcome">
-        <div className={s.sticky}>
+        <div className={s.sticky} data-sticky>
           <div className={s.creamHead} data-cream-head>
             <span className={s.kicker} data-kick>
               <Mark size={16} /> Bienvenido <span className="script">a</span> {stop.name}
@@ -561,9 +630,8 @@ function RegionContent({ stop, lenis }: { stop: Stop; lenis: React.RefObject<Len
             </div>
           </div>
 
-          <canvas className={s.liquid} data-liquid aria-hidden="true" />
-
-          <div className={s.brown} data-brown>
+          {/* brown side: always laid out exactly like the cream headline; revealed through the liquid */}
+          <div className={s.brown} data-brown style={{ visibility: 'hidden' }}>
             <div className={s.creamHead}>
               <span className={`${s.kicker} ${s.kickerLight}`} data-kick>
                 <Mark size={16} /> Bienvenido <span className="script">a</span> {stop.name}
@@ -578,6 +646,9 @@ function RegionContent({ stop, lenis }: { stop: Stop; lenis: React.RefObject<Len
               </figure>
             ))}
           </div>
+
+          {/* cream side in WebGL (paper + the headline in ink), eaten away by the liquid edge */}
+          <canvas className={s.liquid} data-liquid aria-hidden="true" style={{ visibility: 'hidden' }} />
 
           <canvas className={s.liquid} data-liquid-out aria-hidden="true" />
         </div>
