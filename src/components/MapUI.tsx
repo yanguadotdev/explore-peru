@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { Component, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { regionPhotos } from '../data/regionPhotos'
 import { MAIN_STOPS, STOPS } from '../data/stops'
 import { audio } from '../lib/audio'
@@ -29,10 +29,34 @@ export function MapUI() {
       <SoundToggle />
       <VehicleSwitcher />
       <HoverCard />
-      <RegionPage />
+      <PageBoundary>
+        <RegionPage />
+      </PageBoundary>
       <StampsModal />
     </div>
   )
+}
+
+/**
+ * Safety net: an error inside a region page must never blank the whole site.
+ * It closes the page, wakes the map back up and remounts the page component.
+ */
+class PageBoundary extends Component<{ children: ReactNode }, { key: number; failed: boolean }> {
+  state = { key: 0, failed: false }
+  static getDerivedStateFromError() {
+    return { failed: true }
+  }
+  componentDidCatch(error: unknown) {
+    console.error('[region page]', error)
+    const exp = getExperience()
+    if (exp) exp.paused = false
+    exp?.map.zoomOut()
+    store.set({ openStop: null })
+    this.setState((st) => ({ key: st.key + 1, failed: false }))
+  }
+  render() {
+    return this.state.failed ? null : <div key={this.state.key} style={{ display: 'contents' }}>{this.props.children}</div>
+  }
 }
 
 // ------------------------------------------------------------------ header

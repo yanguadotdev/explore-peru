@@ -8,6 +8,7 @@
   inset: 0;
   z-index: 60;
   overflow: hidden;
+  pointer-events: auto;
   transform-origin: 50% 100%;
   background: var(--cream);
   color: var(--ink);

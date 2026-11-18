@@ -47,11 +47,13 @@ const neighbourOf = (id: string, dir: 1 | -1) => {
   return STOPS[(i + dir + STOPS.length) % STOPS.length]
 }
 
-const decode = (src: string) =>
+/** Resolves once the image is decoded, or after `timeout` ms at the latest (never blocks the loader). */
+const decode = (src: string, timeout = 2500) =>
   new Promise<void>((resolve) => {
     const img = new Image()
     img.src = src
-    img.decode().then(resolve, resolve)
+    img.decode().then(() => resolve(), () => resolve())
+    window.setTimeout(resolve, timeout)
   })
 
 /** Splits a string into masked words for line-by-line reveals. */
@@ -438,13 +440,17 @@ export function RegionPage() {
 
       // ---- story card grows to full screen
       const grow = q('[data-grow]')[0]
+      // keep the element itself: function values are re-evaluated on refresh/revert,
+      // even while the page content is being unmounted
+      const card = q('[data-card]')[0] as HTMLElement | undefined
+      const edge = () => (card?.offsetWidth ?? 0) * 0.24
       gsap.timeline({ defaults: { ease: 'none' }, scrollTrigger: { trigger: grow, scroller: sc, start: 'top top', end: 'bottom bottom', scrub: true } })
         .fromTo(q('[data-card]'), { clipPath: 'inset(30% 24% 16% 24% round 28px)', rotate: -4, y: () => vh() * 0.08 }, { clipPath: 'inset(0% 0% 0% 0% round 22px)', rotate: 0, y: 0, duration: 1 }, 0)
         .fromTo(q('[data-card-zoom] [data-photo]'), { scale: 1.25 }, { scale: 1, duration: 1 }, 0)
         .fromTo(q('[data-slider-ui]'), { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.25 }, 0.35)
         // the arrows ride the card's clipped edges (24% each side → 0), so they are never cut off
-        .fromTo(q('[data-slider-ui] [data-side="l"]'), { x: () => q('[data-card]')[0].offsetWidth * 0.24 }, { x: 0, duration: 1 }, 0)
-        .fromTo(q('[data-slider-ui] [data-side="r"]'), { x: () => -q('[data-card]')[0].offsetWidth * 0.24 }, { x: 0, duration: 1 }, 0)
+        .fromTo(q('[data-slider-ui] [data-side="l"]'), { x: () => edge() }, { x: 0, duration: 1 }, 0)
+        .fromTo(q('[data-slider-ui] [data-side="r"]'), { x: () => -edge() }, { x: 0, duration: 1 }, 0)
 
       // ---- detours + next
       q('[data-detour]').forEach((row) => {
