@@ -492,12 +492,17 @@ function HoverCard() {
   const card = useRef<HTMLDivElement>(null)
   const [shown, setShown] = useState<string | null>(null)
 
-  // warm the cache so the first hover already has its photo
+  // warm the cache so the first hover already has its photo — a little later and at
+  // low priority, so these 25 requests never queue in front of an opening region page
   useEffect(() => {
-    STOPS.forEach((x) => {
-      const img = new Image()
-      img.src = regionPhotos(x.id).card
-    })
+    const t = window.setTimeout(() => {
+      STOPS.forEach((x) => {
+        const img = new Image()
+        img.fetchPriority = 'low'
+        img.src = regionPhotos(x.id).card
+      })
+    }, 2500)
+    return () => window.clearTimeout(t)
   }, [])
   const follow = useRef<string | null>(null)
   const side = useRef<'right' | 'left'>('right')

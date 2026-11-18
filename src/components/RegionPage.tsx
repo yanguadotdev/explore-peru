@@ -51,6 +51,7 @@ const neighbourOf = (id: string, dir: 1 | -1) => {
 const decode = (src: string, timeout = 2500) =>
   new Promise<void>((resolve) => {
     const img = new Image()
+    img.fetchPriority = 'high'
     img.src = src
     img.decode().then(() => resolve(), () => resolve())
     window.setTimeout(resolve, timeout)
@@ -767,6 +768,24 @@ function StorySlider({ stop, slides }: { stop: Stop; slides: string[] }) {
   const gl = useRef<LiquidSlider | null>(null)
   const dir = useRef<1 | -1>(1)
   const swipe = useRef<{ x: number; y: number } | null>(null)
+  // auto-advance only while the slider is really on screen (not while scrolling towards it)
+  const onScreen = useRef(false)
+  const run = useRef<gsap.core.Tween | null>(null)
+
+  useLayoutEffect(() => {
+    const el = root.current
+    if (!el) return
+    const io = new IntersectionObserver(
+      ([e]) => {
+        onScreen.current = e.isIntersecting
+        if (e.isIntersecting) run.current?.resume()
+        else run.current?.pause()
+      },
+      { threshold: 0.75 },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
 
   // WebGL photo layer: transitions flood in behind the liquid noise edge
   useLayoutEffect(() => {
@@ -808,9 +827,10 @@ function StorySlider({ stop, slides }: { stop: Stop; slides: string[] }) {
     // progress bar of the active slide; auto-advance when it fills
     const bars = el.querySelectorAll<HTMLElement>('[data-bar]')
     bars.forEach((b, i) => gsap.set(b, { scaleX: i < idx ? 1 : 0 }))
-    const run = gsap.fromTo(bars[idx], { scaleX: 0 }, { scaleX: 1, duration: 8, ease: 'none', onComplete: () => go(pos + 1) })
+    const tw = gsap.fromTo(bars[idx], { scaleX: 0 }, { scaleX: 1, duration: 8, ease: 'none', paused: !onScreen.current, onComplete: () => go(pos + 1) })
+    run.current = tw
     return () => {
-      run.kill()
+      tw.kill()
     }
   }, [pos])
 
