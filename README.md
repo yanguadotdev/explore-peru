@@ -62,7 +62,26 @@ pnpm install
 pnpm dev        # http://localhost:5178
 pnpm build      # type-check + build de producción en dist/
 pnpm audio      # regenera los WAV de public/audio
+pnpm test:e2e   # tests de UI end-to-end (Playwright + Chrome)
+pnpm test:e2e:ui  # los mismos tests en el modo visual de Playwright
 ```
+
+## Tests de UI (Playwright)
+
+`e2e/` recorre el sitio real en Chrome (WebGL, GSAP, Lenis y React Router incluidos), como lo
+haría una persona, con su propio servidor de desarrollo en el puerto 5179. **Cualquier error de
+consola o excepción no capturada hace fallar el test** (`e2e/fixtures.ts`), así que fallos como
+una pantalla en blanco al salir de una página se detectan solos.
+
+Cubren: loader → hero → mapa; lista de regiones, pasaporte de sellos y cambio de transporte;
+rutas (enlace directo, región inexistente, atrás/adelante); en la página de región: cerrar con
+"Volver al mapa", Escape y "Explorar en 3D" (también desde el slider), scroll completo por todas
+las secciones, slider de historias (flechas, miniaturas y deslizar), región anterior/siguiente,
+desvíos, tarjeta de la siguiente región, pantalla de móvil, y las 25 regiones una tras otra con
+su foto cargada.
+
+Usan el Chrome instalado en el equipo (`channel: 'chrome'`). Si un test falla, el informe con
+captura, vídeo y traza queda en `e2e-report/` (`pnpm exec playwright show-report e2e-report`).
 
 ## Rutas (SPA con React Router)
 

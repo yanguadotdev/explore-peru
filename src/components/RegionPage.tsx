@@ -514,7 +514,7 @@ export function RegionPage() {
       </div>
 
       {/* paper loader: patterned paper (WebGL canvas prepended at runtime), van, counter, route */}
-      <div className={s.loader} ref={loader} style={{ visibility: 'hidden' }} aria-hidden="true">
+      <div className={s.loader} ref={loader} style={{ visibility: 'hidden' }} aria-hidden="true" data-testid="region-loader">
         <div className={s.loaderCenter}>
           <span className={s.loaderVan} data-ld data-van />
           <span className={s.loaderCount} data-ld>

@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "audio": "node scripts/gen-audio.mjs"
+    "audio": "node scripts/gen-audio.mjs",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "gsap": "^3.15.1",
@@ -19,6 +21,7 @@
     "three": "^0.187.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.1",
     "@types/howler": "^2.2.13",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",

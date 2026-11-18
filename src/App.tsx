@@ -45,7 +45,7 @@ export default function App() {
       update()
     }).then(() => {
       const params = new URLSearchParams(location.search)
-      if (import.meta.env.DEV && params.has('map')) {
+      if ((import.meta.env.DEV || import.meta.env.VITE_E2E === '1') && params.has('map')) {
         setLoader(false)
         e.jumpToMap()
         store.set({ phase: 'map', sound: false })
