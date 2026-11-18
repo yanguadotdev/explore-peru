@@ -363,14 +363,24 @@ export function RegionPage() {
       const sticky = stage.querySelector<HTMLElement>('[data-sticky]')!
       // swap the DOM cream headline for its WebGL twin while the liquid is on screen
       let covering = false
+      let rasterSize = ''
+      const ensureRaster = () => {
+        const size = `${window.innerWidth}x${window.innerHeight}`
+        if (size === rasterSize) return
+        rasterSize = size
+        liquid.setTexture(rasterize(creamHead, sticky))
+      }
       const setCovering = (on: boolean) => {
         if (on === covering) return
         covering = on
-        if (on) liquid.setTexture(rasterize(creamHead, sticky))
+        if (on) ensureRaster()
         gsap.set(creamHead, { autoAlpha: on ? 0 : 1 })
         gsap.set([brown, coverCanvas], { autoAlpha: on ? 1 : 0 })
       }
-      const onResize = () => covering && liquid.setTexture(rasterize(creamHead, sticky))
+      const onResize = () => {
+        rasterSize = ''
+        if (covering) ensureRaster()
+      }
       window.addEventListener('resize', onResize)
       cleanups.push(() => window.removeEventListener('resize', onResize))
       // a second, cream flood closes the section and hands over to the stories
@@ -378,7 +388,7 @@ export function RegionPage() {
       liquids.push(liquid, liquidOut)
       const fill = { p: 0 }
       const fillOut = { p: 0 }
-      const st = gsap.timeline({ defaults: { ease: 'none' }, scrollTrigger: { trigger: stage, scroller: sc, start: 'top top', end: 'bottom bottom', scrub: 0.6 } })
+      const st = gsap.timeline({ defaults: { ease: 'none' }, scrollTrigger: { trigger: stage, scroller: sc, start: 'top top', end: 'bottom bottom', scrub: true } })
       // Route 66 pacing: the postcard tilts and shrinks a little, then rides up with the
       // scroll while the headline follows right underneath it (a constant gap, never touching)
       const T = 0.6
@@ -428,10 +438,13 @@ export function RegionPage() {
 
       // ---- story card grows to full screen
       const grow = q('[data-grow]')[0]
-      gsap.timeline({ defaults: { ease: 'none' }, scrollTrigger: { trigger: grow, scroller: sc, start: 'top top', end: 'bottom bottom', scrub: 0.6 } })
+      gsap.timeline({ defaults: { ease: 'none' }, scrollTrigger: { trigger: grow, scroller: sc, start: 'top top', end: 'bottom bottom', scrub: true } })
         .fromTo(q('[data-card]'), { clipPath: 'inset(30% 24% 16% 24% round 28px)', rotate: -4, y: () => vh() * 0.08 }, { clipPath: 'inset(0% 0% 0% 0% round 22px)', rotate: 0, y: 0, duration: 1 }, 0)
-        .fromTo(q('[data-card-zoom]'), { scale: 1.25 }, { scale: 1, duration: 1 }, 0)
-        .fromTo(q('[data-slider-ui]'), { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.25 }, 0.8)
+        .fromTo(q('[data-card-zoom] [data-photo]'), { scale: 1.25 }, { scale: 1, duration: 1 }, 0)
+        .fromTo(q('[data-slider-ui]'), { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.25 }, 0.35)
+        // the arrows ride the card's clipped edges (24% each side → 0), so they are never cut off
+        .fromTo(q('[data-slider-ui] [data-side="l"]'), { x: () => q('[data-card]')[0].offsetWidth * 0.24 }, { x: 0, duration: 1 }, 0)
+        .fromTo(q('[data-slider-ui] [data-side="r"]'), { x: () => -q('[data-card]')[0].offsetWidth * 0.24 }, { x: 0, duration: 1 }, 0)
 
       // ---- detours + next
       q('[data-detour]').forEach((row) => {
@@ -445,7 +458,7 @@ export function RegionPage() {
         y: 0,
         scale: 1,
         ease: 'none',
-        scrollTrigger: { trigger: q('[data-next]')[0], scroller: sc, start: 'top bottom', end: 'center center', scrub: 0.6 },
+        scrollTrigger: { trigger: q('[data-next]')[0], scroller: sc, start: 'top bottom', end: 'center center', scrub: true },
       })
 
       // ---- page header progress
@@ -809,7 +822,7 @@ function StorySlider({ stop, slides }: { stop: Stop; slides: string[] }) {
 
   return (
     <div className={s.slider} ref={root} onPointerDown={onPointerDown} onPointerUp={onPointerUp}>
-      <canvas className={s.sliderGl} ref={canvas} role="img" aria-label={stop.story[idx].title} />
+      <canvas className={s.sliderGl} ref={canvas} data-photo role="img" aria-label={stop.story[idx].title} />
       <span className={s.slideShade} />
       {stop.story.map((st, i) => (
         <div key={i} className={s.slide} data-slide style={i === 0 ? undefined : { visibility: 'hidden' }}>
@@ -833,7 +846,7 @@ function StorySlider({ stop, slides }: { stop: Stop; slides: string[] }) {
             </span>
           ))}
         </div>
-        <button className={`${s.side} ${s.sideL}`} onClick={() => go(pos - 1)}>
+        <button className={`${s.side} ${s.sideL}`} data-side="l" onClick={() => go(pos - 1)}>
           <span className={s.sideBtn}>
             <span className={s.flip}>
               <Arrow size={16} />
@@ -844,7 +857,7 @@ function StorySlider({ stop, slides }: { stop: Stop; slides: string[] }) {
             historia
           </span>
         </button>
-        <button className={`${s.side} ${s.sideR}`} onClick={() => go(pos + 1)}>
+        <button className={`${s.side} ${s.sideR}`} data-side="r" onClick={() => go(pos + 1)}>
           <span>
             <em>Siguiente</em>
             historia

@@ -135,8 +135,7 @@
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   padding: 0 0 0 14px;
-  background: rgba(237, 227, 204, 0.94);
-  backdrop-filter: blur(10px);
+  background: rgba(237, 227, 204, 0.98);
   border-bottom: 1px solid rgba(58, 36, 24, 0.12);
 }
 
@@ -263,6 +262,7 @@
   top: 0;
   height: 100vh;
   overflow: hidden;
+  contain: layout paint;
 }
 
 .creamHead {
@@ -336,13 +336,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  animation: kenburns 24s ease-in-out infinite alternate;
-}
-
-@keyframes kenburns {
-  to {
-    object-position: 60% 40%;
-  }
+  will-change: transform;
 }
 
 .heroShade {
@@ -437,31 +431,33 @@
   gap: 12px;
   color: var(--paper);
   text-align: left;
-  text-shadow: 0 2px 14px rgba(20, 10, 4, 0.55);
+  text-shadow:
+    0 1px 2px rgba(20, 10, 4, 0.6),
+    0 2px 16px rgba(20, 10, 4, 0.6);
   transform: translateY(-50%);
 }
 
 .side > span:not(.sideBtn) {
   display: grid;
   font-weight: 800;
-  font-size: 13px;
+  font-size: 14px;
   text-transform: uppercase;
 }
 
 .side em {
   font-style: normal;
   font-family: var(--wide);
-  font-size: 8px;
+  font-size: 9px;
   letter-spacing: 0.16em;
-  opacity: 0.75;
+  opacity: 0.9;
 }
 
 .sideL {
-  left: 28px;
+  left: clamp(28px, 4vw, 64px);
 }
 
 .sideR {
-  right: 28px;
+  right: clamp(28px, 4vw, 64px);
   text-align: right;
 }
 
@@ -474,9 +470,9 @@
   place-items: center;
   border-radius: 7px;
   transform: rotate(45deg);
-  border: 1.5px solid rgba(251, 247, 238, 0.7);
-  background: rgba(20, 10, 4, 0.18);
-  backdrop-filter: blur(6px);
+  border: 2px solid var(--paper);
+  background: rgba(20, 10, 4, 0.38);
+  box-shadow: 0 6px 18px rgba(20, 10, 4, 0.3);
   transition: background 0.35s var(--alt-out), color 0.35s, transform 0.35s var(--alt-out);
 }
 
@@ -569,6 +565,7 @@
 
 .float {
   position: absolute;
+  will-change: transform;
   margin: 0;
   border-radius: 14px;
   overflow: hidden;
@@ -836,6 +833,7 @@
 
 .timelineTrack {
   position: absolute;
+  will-change: transform;
   inset: 0;
   left: 50%;
   width: 100%;
