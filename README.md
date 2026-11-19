@@ -96,6 +96,13 @@ páginas. Un enlace directo a una región pasa por el loader y salta el hero. Un
 existe redirige a `/`. Al publicar, el hosting debe servir `index.html` para cualquier ruta
 (fallback de SPA; `vite preview` ya lo hace).
 
+## Despliegue (Vercel)
+
+`vercel.json` ya lo deja listo: build con `pnpm build`, salida en `dist/`, el fallback de SPA
+(cualquier ruta → `index.html`, así `/regions/cusco` funciona al recargar) y caché larga para los
+assets con hash y una semana para fotos, fuentes y audio. Basta con importar el repositorio en
+Vercel; no hace falta configurar nada más ni variables de entorno.
+
 Atajo de desarrollo (solo en `dev`): añade `?map` para saltar el loader, p. ej.
 `http://localhost:5178/?map` o `http://localhost:5178/regions/cusco?map`.
 
