@@ -121,7 +121,3 @@ se usa la escena 3D de montañas.
   (`https://unsplash.com/photos/<id>`).
 - `pattern-alt.png`: patrón topográfico del loader.
 - `fonts/`: Centra No2, Heldies, Barlow ExtraBold y Krona One.
-
-> Centra No2 y Heldies son fuentes comerciales, y el patrón y algunas fotos provienen de webs de
-> referencia. Antes de publicar el proyecto hay que comprar las licencias y usar imágenes propias o
-> con licencia. Barlow y Krona One son libres (OFL).
