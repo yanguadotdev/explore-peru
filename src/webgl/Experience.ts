@@ -4,7 +4,7 @@ import { HeroScene } from './HeroScene'
 import { HERO_IMAGES, PhotoHero } from './PhotoHero'
 
 /**
- * Hero background: 'route' | 'mountain' use the photos in /public,
+ * Hero background: 'machu' uses the photo in /public (see HERO_IMAGES),
  * '3d' uses the procedural mountain scene (HeroScene).
  */
 const HERO_BACKGROUND: keyof typeof HERO_IMAGES | '3d' = 'machu'

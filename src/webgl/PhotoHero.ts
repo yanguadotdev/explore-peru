@@ -73,7 +73,6 @@ export type HeroImage = {
 export const HERO_IMAGES = {
   // push into the citadel below Huayna Picchu
   machu: { src: 'machu-picchu.jpg', focus: [0.46, 0.36] },
-  route: { src: 'route.jpg', focus: [0.512, 0.42] },
 } satisfies Record<string, HeroImage>
 
 export class PhotoHero {

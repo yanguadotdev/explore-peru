@@ -41,3 +41,30 @@ desktop.ini
 dist-e2e/
 e2e-results/
 e2e-report/
+
+# Deploy (Vercel CLI links the folder to a project here)
+.vercel/
+
+# Secrets and credentials — never commit these
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+.npmrc
+.yarnrc.yml
+secrets/
+credentials*.json
+service-account*.json
+
+# Test / coverage output (Playwright defaults, if run without the config)
+coverage/
+playwright-report/
+test-results/
+blob-report/
+playwright/.cache/
+
+# Local scratch
+*.tmp
+*.bak
+.cache/
