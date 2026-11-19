@@ -5,6 +5,7 @@ import { MapUI } from './components/MapUI'
 import { audio } from './lib/audio'
 import { gsap } from './lib/ease'
 import { setExperience } from './lib/experience'
+import { useRegionRoute, useUrlRegion } from './lib/useRegionRoute'
 import { store, useStore } from './lib/store'
 import { Experience } from './webgl/Experience'
 
@@ -14,6 +15,10 @@ export default function App() {
   const hero = useRef<HeroHandle>(null)
   const exp = useRef<Experience | null>(null)
   const [loader, setLoader] = useState(true)
+  useRegionRoute()
+  // a deep link (/regions/<id>) skips the hero: after the loader it goes straight to the map
+  const urlRegion = useUrlRegion()
+  const deepLink = useRef(urlRegion !== null)
 
   useEffect(() => {
     if (exp.current || !canvas.current) return
@@ -39,7 +44,8 @@ export default function App() {
       p.world = v
       update()
     }).then(() => {
-      if (import.meta.env.DEV && new URLSearchParams(location.search).has('map')) {
+      const params = new URLSearchParams(location.search)
+      if ((import.meta.env.DEV || import.meta.env.VITE_E2E === '1') && params.has('map')) {
         setLoader(false)
         e.jumpToMap()
         store.set({ phase: 'map', sound: false })
@@ -58,6 +64,13 @@ export default function App() {
   }, [])
 
   const reveal = () => {
+    const e = exp.current
+    if (deepLink.current && e) {
+      e.jumpToMap()
+      audio.setEnabled(store.get().sound)
+      store.set({ phase: 'map' })
+      return
+    }
     store.set({ phase: 'hero' })
     hero.current?.intro()
     exp.current?.heroIntro()
@@ -79,7 +92,7 @@ export default function App() {
 
   return (
     <>
-      <canvas ref={canvas} className="webgl" aria-label="Mapa interactivo en 3D de la Ruta del Café" />
+      <canvas ref={canvas} className="webgl" aria-label="Mapa interactivo en 3D del Perú" />
       <Hero ref={hero} onStart={start} />
       {phase === 'map' && <MapUI />}
       {loader && <Loader onRevealStart={reveal} onDone={() => setLoader(false)} />}

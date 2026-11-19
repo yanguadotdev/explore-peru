@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react'
 
 export type Phase = 'loading' | 'hero' | 'to-map' | 'map'
-export type VehicleId = 'jeep' | 'mula' | 'chiva'
+export type VehicleId = 'combi' | 'llama' | 'tren'
 
 export type State = {
   phase: Phase
@@ -20,7 +20,7 @@ let state: State = {
   phase: 'loading',
   progress: 0,
   collected: [],
-  vehicle: 'jeep',
+  vehicle: 'combi',
   hovered: null,
   openStop: null,
   sound: true,

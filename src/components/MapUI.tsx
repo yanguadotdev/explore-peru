@@ -1,12 +1,12 @@
-import Lenis from 'lenis'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { Component, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { regionPhotos } from '../data/regionPhotos'
 import { MAIN_STOPS, STOPS } from '../data/stops'
 import { audio } from '../lib/audio'
 import { gsap } from '../lib/ease'
 import { getExperience } from '../lib/experience'
 import { store, useStore, type VehicleId } from '../lib/store'
-import { Arrow, Chevron, Close, ListIcon, MapIcon, Mark, SoundIcon, StopIcon, VehicleIcon } from './Icons'
-import { Illustration } from './Illustration'
+import { Chevron, Close, ListIcon, MapIcon, Mark, SoundIcon, StopIcon, VehicleIcon } from './Icons'
+import { RegionPage } from './RegionPage'
 import { Stamp } from './Stamp'
 import s from './MapUI.module.css'
 
@@ -29,10 +29,34 @@ export function MapUI() {
       <SoundToggle />
       <VehicleSwitcher />
       <HoverCard />
-      <StopPanel />
+      <PageBoundary>
+        <RegionPage />
+      </PageBoundary>
       <StampsModal />
     </div>
   )
+}
+
+/**
+ * Safety net: an error inside a region page must never blank the whole site.
+ * It closes the page, wakes the map back up and remounts the page component.
+ */
+class PageBoundary extends Component<{ children: ReactNode }, { key: number; failed: boolean }> {
+  state = { key: 0, failed: false }
+  static getDerivedStateFromError() {
+    return { failed: true }
+  }
+  componentDidCatch(error: unknown) {
+    console.error('[region page]', error)
+    const exp = getExperience()
+    if (exp) exp.paused = false
+    exp?.map.zoomOut()
+    store.set({ openStop: null })
+    this.setState((st) => ({ key: st.key + 1, failed: false }))
+  }
+  render() {
+    return this.state.failed ? null : <div key={this.state.key} style={{ display: 'contents' }}>{this.props.children}</div>
+  }
 }
 
 // ------------------------------------------------------------------ header
@@ -81,18 +105,18 @@ function Header() {
     <header className={s.header} data-anim="header">
       <div className={s.logo} data-i>
         <Mark size={24} />
-        <span className={s.logoName}>ALTURA</span>
-        <span className={s.logoSub}>Café de Origen</span>
+        <span className={s.logoName}>KUNTUR</span>
+        <span className={s.logoSub}>Explora el Perú</span>
       </div>
 
       <div className={s.headerCenter} data-i>
         <span>De la</span>
-        <span className="script">Montaña</span>
+        <span className="script">Costa</span>
         <span className={s.headerBadge}>
-          <StopIcon icon="cup" size={18} />
+          <StopIcon icon="compass" size={18} />
         </span>
-        <span>a tu</span>
-        <span className="script">Taza</span>
+        <span>a la</span>
+        <span className="script">Selva</span>
       </div>
 
       <nav className={s.headerNav}>
@@ -106,7 +130,7 @@ function Header() {
               store.set({ listOpen: !listOpen })
             }}
           >
-            <RollText>Paradas</RollText>
+            <RollText>Regiones</RollText>
             <ListIcon size={16} />
           </button>
           <StopsList />
@@ -135,6 +159,9 @@ function Header() {
   )
 }
 
+/** Route stops first (in travel order), then every other region A→Z. */
+const LIST_ORDER = [...MAIN_STOPS, ...STOPS.filter((x) => x.kind !== 'stop').sort((a, b) => a.name.localeCompare(b.name, 'es'))]
+
 function StopsList() {
   const open = useStore((st) => st.listOpen)
   const collected = useStore((st) => st.collected)
@@ -154,7 +181,7 @@ function StopsList() {
   return (
     <div className={s.list} ref={ref} style={{ visibility: 'hidden' }}>
       <ol>
-        {MAIN_STOPS.map((stop) => (
+        {LIST_ORDER.map((stop) => (
           <li key={stop.id}>
             <button
               onClick={() => {
@@ -162,11 +189,11 @@ function StopsList() {
                 store.set({ listOpen: false, openStop: stop.id })
               }}
             >
-              <span className={s.listNum}>{String(stop.index).padStart(2, '0')}</span>
+              <span className={`${s.listNum} ${stop.kind === 'stop' ? '' : s.listNumOff}`}>{stop.kind === 'stop' ? String(stop.index).padStart(2, '0') : '·'}</span>
               <span className={s.listText}>
                 <strong>{stop.name}</strong>
                 <em>
-                  {stop.stage} · {stop.altitude.toLocaleString('es')} msnm
+                  {stop.stage} · Capital: {stop.capital}
                 </em>
               </span>
               {collected.includes(stop.id) && <span className={s.listCheck}>✓</span>}
@@ -181,9 +208,10 @@ function StopsList() {
 // ------------------------------------------------------------------ onboarding
 
 const STEPS = [
-  { title: 'Recorre la ruta', body: 'Arrastra el mapa y usa la rueda para acercarte a la montaña.', icon: 'mirador' as const },
-  { title: 'Explora las paradas', body: 'Haz clic en los pines para descubrir cada etapa y ganar su sello.', icon: 'cherry' as const },
-  { title: 'Cambia de transporte', body: 'Recorre la ruta en jeep, a lomo de mula o en chiva.', icon: 'sack' as const },
+  // photos: Unsplash (see README for credits)
+  { title: 'Recorre el Perú', body: 'Arrastra el mapa y usa la rueda para acercarte a los Andes, la costa y la selva.', photo: 'vinicunca.jpg', alt: 'Montaña de Siete Colores, Cusco' },
+  { title: 'Explora las regiones', body: 'Haz clic en los pines para descubrir los 25 departamentos y sus curiosidades.', photo: 'huacachina.jpg', alt: 'Oasis de Huacachina, Ica' },
+  { title: 'Colecciona sellos', body: 'Visita las 8 paradas de la ruta para completar tu pasaporte viajero.', photo: 'llama.jpg', alt: 'Llama en los Andes' },
 ]
 
 function Onboarding() {
@@ -246,7 +274,16 @@ function Onboarding() {
   return (
     <div className={s.onboard} data-anim="bl" ref={card}>
       <div className={s.onboardThumb}>
-        <StopIcon icon={st.icon} size={36} />
+        {/* all photos stacked; the active one cross-fades in */}
+        {STEPS.map((p, i) => (
+          <img
+            key={p.photo}
+            src={`${import.meta.env.BASE_URL}onboarding/${p.photo}`}
+            alt={i === step ? p.alt : ''}
+            className={`${s.onboardPhoto} ${i === step ? s.onboardPhotoOn : ''}`}
+            draggable={false}
+          />
+        ))}
         <span className={s.onboardBar}>
           <span ref={bar} />
         </span>
@@ -297,9 +334,9 @@ function SoundToggle() {
 // ------------------------------------------------------------------ vehicles
 
 const VEHICLES: { id: VehicleId; name: string }[] = [
-  { id: 'jeep', name: 'Jeep' },
-  { id: 'mula', name: 'Mula' },
-  { id: 'chiva', name: 'Chiva' },
+  { id: 'combi', name: 'Combi' },
+  { id: 'llama', name: 'Llama' },
+  { id: 'tren', name: 'Tren' },
 ]
 
 function VehicleSwitcher() {
@@ -339,17 +376,17 @@ function VehicleSwitcher() {
         <PromoArt />
         <div className={s.promoText}>
           <span className="script">Descubre</span>
-          <strong>La Taza</strong>
+          <strong>Machu Picchu</strong>
           <button
             className={s.promoBtn}
             tabIndex={open ? 0 : -1}
             onClick={() => {
               audio.play('click')
               setOpen(false)
-              store.set({ openStop: 'pueblo' })
+              store.set({ openStop: 'cusco' })
             }}
           >
-            Ir a la cafetería
+            Ir a Cusco
           </button>
         </div>
       </div>
@@ -402,7 +439,7 @@ function VehicleSwitcher() {
   )
 }
 
-/** Little coffee-depot illustration used on the switcher toggle. */
+/** Little bus-station illustration used on the switcher toggle. */
 function DepotIcon() {
   return (
     <svg width="58" height="58" viewBox="0 0 64 64" aria-hidden="true">
@@ -419,7 +456,7 @@ function DepotIcon() {
   )
 }
 
-/** Promo card art: the town café at dusk. */
+/** Promo card art: Machu Picchu terraces under Huayna Picchu at dusk. */
 function PromoArt() {
   return (
     <svg className={s.promoArt} viewBox="0 0 240 130" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
@@ -430,17 +467,16 @@ function PromoArt() {
         </linearGradient>
       </defs>
       <rect width="240" height="130" fill="url(#promo-sky)" />
-      <path d="M0 78 C40 52 70 66 110 50 S190 46 240 64 V130 H0Z" fill="#8FA08C" />
-      <rect x="40" y="52" width="150" height="62" fill="#F3EADB" />
-      <path d="M32 54 L115 30 L198 54 Z" fill="#B24A2C" />
-      {[0, 1, 2, 3, 4, 5].map((i) => (
-        <rect key={i} x={46 + i * 24} y="70" width="20" height="10" fill={i % 2 ? '#C8412B' : '#F7EEDC'} />
+      <path d="M0 80 L40 46 L70 70 L110 30 L150 64 L190 40 L240 70 V130 H0Z" fill="#9AA6A0" />
+      <path d="M120 112 L150 22 L168 30 L190 112Z" fill="#3E6A35" />
+      {[0, 1, 2, 3, 4].map((i) => (
+        <rect key={i} x={30 + i * 8} y={84 + i * 7} width={150 - i * 16} height="7" fill={i % 2 ? '#7FA65A' : '#8DB363'} />
       ))}
-      <rect x="54" y="84" width="22" height="30" fill="#3A2418" />
-      <rect x="92" y="84" width="40" height="20" fill="#3F7F86" opacity=".85" />
-      <rect x="146" y="84" width="30" height="20" fill="#3F7F86" opacity=".85" />
-      <rect x="0" y="114" width="240" height="16" fill="#CDB68A" />
-      <circle cx="205" cy="34" r="12" fill="#FBEBC9" opacity=".9" />
+      {[0, 1, 2, 3, 4, 5].map((i) => (
+        <rect key={i} x={48 + i * 16} y="74" width="11" height="9" fill="#B7AE9C" />
+      ))}
+      <rect x="0" y="118" width="240" height="12" fill="#5E7E5C" />
+      <circle cx="205" cy="30" r="11" fill="#FBEBC9" opacity=".9" />
     </svg>
   )
 }
@@ -455,6 +491,19 @@ function HoverCard() {
   // inner layer: animated by GSAP (never positioned by code)
   const card = useRef<HTMLDivElement>(null)
   const [shown, setShown] = useState<string | null>(null)
+
+  // warm the cache so the first hover already has its photo — a little later and at
+  // low priority, so these 25 requests never queue in front of an opening region page
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      STOPS.forEach((x) => {
+        const img = new Image()
+        img.fetchPriority = 'low'
+        img.src = regionPhotos(x.id).card
+      })
+    }, 2500)
+    return () => window.clearTimeout(t)
+  }, [])
   const follow = useRef<string | null>(null)
   const side = useRef<'right' | 'left'>('right')
 
@@ -516,249 +565,18 @@ function HoverCard() {
       <div ref={card} className={`${s.hoverCard} ${stop?.kind === 'detour' ? s.hoverDetour : ''}`} style={{ visibility: 'hidden' }}>
         {stop && (
           <>
-            <Illustration stop={stop} className={s.hoverArt} />
+            <img className={s.hoverArt} src={regionPhotos(stop.id).card} alt="" draggable={false} />
             <div className={s.hoverText}>
-              <span className={s.hoverKicker}>{stop.kind === 'stop' ? `Parada ${String(stop.index).padStart(2, '0')} · ${stop.stage}` : 'Desvío'}</span>
+              <span className={s.hoverKicker}>{stop.kind === 'stop' ? `Parada ${String(stop.index).padStart(2, '0')} · ${stop.stage}` : stop.stage}</span>
               <strong>{stop.name}</strong>
-              <span className={s.hoverAlt}>{stop.altitude.toLocaleString('es')} msnm</span>
+              <span className={s.hoverAlt}>Capital: {stop.capital} · {stop.altitude.toLocaleString('es')} msnm</span>
               <p>{stop.teaser}</p>
-              {stop.kind === 'stop' && <span className={s.hoverCta}>Clic para explorar</span>}
+              <span className={s.hoverCta}>Clic para explorar</span>
             </div>
           </>
         )}
       </div>
     </div>
-  )
-}
-
-// ------------------------------------------------------------------ stop panel
-
-/** "Peek" pose: a small tilted card poking in from the bottom-right corner. */
-const PEEK = { xPercent: 18, yPercent: 24, rotate: -4, scale: 0.58 }
-
-function StopPanel() {
-  const openId = useStore((st) => st.openStop)
-  const collected = useStore((st) => st.collected)
-  const [stopId, setStopId] = useState<string | null>(null)
-  const panel = useRef<HTMLElement>(null)
-  const scroller = useRef<HTMLDivElement>(null)
-  const content = useRef<HTMLDivElement>(null)
-  const stampRef = useRef<HTMLDivElement>(null)
-  const lenis = useRef<Lenis | null>(null)
-  const peek = useRef<HTMLDivElement>(null)
-  const hint = useRef<HTMLDivElement>(null)
-  const hintShown = useRef(false)
-  const isOpen = useRef(false)
-
-  const stop = STOPS.find((x) => x.id === stopId)
-
-  // open / close orchestration — a layout effect so the panel mounts and starts
-  // moving in the same frame as the click (no post-paint render hop)
-  useLayoutEffect(() => {
-    const el = panel.current
-    if (!el) return
-    const exp = getExperience()
-    if (openId) {
-      const target = STOPS.find((x) => x.id === openId)!
-      exp?.map.flyTo(openId, target.kind === 'stop')
-      if (target.kind === 'detour') {
-        // detours only get the hover card; nudge the camera there
-        store.set({ openStop: null })
-        return
-      }
-      setStopId(openId)
-      audio.play('click')
-    } else if (stopId) {
-      // reverse: fold back into the tilted card, then drop out bottom-right
-      isOpen.current = false
-      const tl = gsap.timeline({
-        onComplete: () => {
-          setStopId(null)
-          gsap.set(el, { visibility: 'hidden' })
-        },
-      })
-      tl.to(el, { ...PEEK, duration: 0.42, ease: 'alt.inOut', overwrite: true })
-        .to(el, { xPercent: 70, yPercent: 48, rotate: -8, autoAlpha: 0, duration: 0.3, ease: 'alt.in' })
-      exp?.map.zoomOut()
-    }
-  }, [openId])
-
-  // animate content whenever the displayed stop changes
-  useLayoutEffect(() => {
-    const el = panel.current
-    if (!el || !stopId) return
-    let contentDelay = 0.1
-    if (!isOpen.current) {
-      // first open: ONE continuous motion, starting on the click frame — the
-      // tilted card glides in from the bottom-right while straightening and
-      // growing into the full panel (ease-out, so it moves fastest right away)
-      isOpen.current = true
-      contentDelay = 0.15
-      gsap.set(el, { visibility: 'visible' })
-      gsap.fromTo(
-        el,
-        { autoAlpha: 0, xPercent: 40, yPercent: 32, rotate: -6, scale: 0.6 },
-        { autoAlpha: 1, xPercent: 0, yPercent: 0, rotate: 0, scale: 1, duration: 0.75, ease: 'alt.out', overwrite: true },
-      )
-      // the thumbnail flashes beside it and slides away as the panel arrives
-      gsap
-        .timeline()
-        .fromTo(peek.current, { autoAlpha: 0, x: 40, y: 40, rotate: 2 }, { autoAlpha: 1, x: 0, y: 0, rotate: -5, duration: 0.25, ease: 'alt.out' })
-        .to(peek.current, { autoAlpha: 0, x: -60, y: 20, rotate: -9, duration: 0.35, ease: 'alt.in' }, 0.2)
-    }
-    const items = content.current?.querySelectorAll('[data-reveal]') ?? []
-    gsap.fromTo(items, { autoAlpha: 0, y: 26 }, { autoAlpha: 1, y: 0, duration: 0.65, stagger: 0.045, ease: 'alt.out', delay: contentDelay })
-    scroller.current?.scrollTo({ top: 0 })
-    lenis.current?.scrollTo(0, { immediate: true })
-
-    // "more below" hint: shown for each stop if the content overflows
-    const sc = scroller.current
-    if (hint.current && sc) {
-      const overflows = sc.scrollHeight > sc.clientHeight + 24
-      hintShown.current = overflows
-      gsap.fromTo(hint.current, { autoAlpha: 0, y: 12 }, { autoAlpha: overflows ? 1 : 0, y: 0, duration: 0.5, ease: 'alt.out', delay: contentDelay + 0.35, overwrite: true })
-    }
-
-    // passport stamp
-    const already = store.get().collected.includes(stopId)
-    const st = stampRef.current
-    if (st) {
-      if (!already) {
-        gsap.fromTo(st, { autoAlpha: 0, scale: 2.2, rotate: -40 }, {
-          autoAlpha: 1,
-          scale: 1,
-          rotate: -10,
-          duration: 0.55,
-          delay: contentDelay + 0.45,
-          ease: 'back.out(1.6)',
-          onStart: () => audio.play('stamp'),
-          onComplete: () => {
-            const c = store.get().collected
-            if (!c.includes(stopId)) {
-              const next = [...c, stopId]
-              store.set({ collected: next })
-              getExperience()?.map.setCollected(next)
-            }
-          },
-        })
-      } else gsap.set(st, { autoAlpha: 1, scale: 1, rotate: -10 })
-    }
-  }, [stopId])
-
-  // Lenis smooth scroll inside the panel
-  useEffect(() => {
-    const sc = scroller.current
-    if (!sc || !content.current) return
-    const l = new Lenis({ wrapper: sc, content: content.current, smoothWheel: true, lerp: 0.09 })
-    lenis.current = l
-    const raf = (time: number) => l.raf(time * 1000)
-    gsap.ticker.add(raf)
-    // the first real scroll dismisses the "more below" hint
-    const onScroll = () => {
-      if (!hintShown.current || sc.scrollTop < 8) return
-      hintShown.current = false
-      gsap.to(hint.current, { autoAlpha: 0, y: 12, duration: 0.35, ease: 'alt.in', overwrite: true })
-    }
-    sc.addEventListener('scroll', onScroll, { passive: true })
-    return () => {
-      sc.removeEventListener('scroll', onScroll)
-      gsap.ticker.remove(raf)
-      l.destroy()
-    }
-  }, [])
-
-  const idx = stop ? MAIN_STOPS.findIndex((x) => x.id === stop.id) : -1
-  const next = idx >= 0 ? MAIN_STOPS[(idx + 1) % MAIN_STOPS.length] : null
-  const prev = idx >= 0 ? MAIN_STOPS[(idx - 1 + MAIN_STOPS.length) % MAIN_STOPS.length] : null
-
-  return (
-    <>
-    {/* thumbnail that rides beside the tilted card during the peek phase */}
-    <div className={s.panelPeek} ref={peek} style={{ visibility: 'hidden' }} aria-hidden="true">
-      {stop && <Illustration stop={stop} className={s.panelPeekArt} />}
-    </div>
-    <aside className={s.panel} ref={panel} style={{ visibility: 'hidden' }} aria-hidden={!stop} aria-label={stop?.name}>
-      <button className={s.panelClose} aria-label="Cerrar" onClick={() => store.set({ openStop: null })}>
-        <Close />
-      </button>
-      <div className={s.panelScroll} ref={scroller} data-lenis-prevent>
-        <div ref={content}>
-          {stop && (
-            <>
-              <div className={s.panelArtWrap} data-reveal>
-                <Illustration stop={stop} className={s.panelArt} />
-                <div className={s.panelStamp} ref={stampRef} style={{ visibility: 'hidden' }}>
-                  <Stamp stop={stop} collected size={118} />
-                </div>
-              </div>
-              <div className={s.panelBody}>
-                <span className={s.panelKicker} data-reveal>
-                  Parada {String(stop.index).padStart(2, '0')} / {String(MAIN_STOPS.length).padStart(2, '0')} · {stop.stage}
-                </span>
-                <h2 className={s.panelTitle} data-reveal>
-                  {stop.name}
-                </h2>
-                <div className={s.panelMeta} data-reveal>
-                  <span>{stop.altitude.toLocaleString('es')} msnm</span>
-                  {collected.includes(stop.id) && <span className={s.panelGot}>Sello obtenido</span>}
-                </div>
-                <p className={s.panelLead} data-reveal>
-                  {stop.teaser}
-                </p>
-                {stop.story.map((sec, i) => (
-                  <section key={i} className={s.panelSection} data-reveal>
-                    <span className={s.panelSecNum}>{String(i + 1).padStart(2, '0')}</span>
-                    <h3>{sec.title}</h3>
-                    <p>{sec.body}</p>
-                  </section>
-                ))}
-                {stop.note && (
-                  <div className={s.panelNote} data-reveal>
-                    <StopIcon icon="cup" size={28} />
-                    <div>
-                      <span>En la taza</span>
-                      <strong>{stop.note}</strong>
-                    </div>
-                  </div>
-                )}
-                <div className={s.panelNav} data-reveal>
-                  {prev && (
-                    <button onClick={() => store.set({ openStop: prev.id })}>
-                      <span className={s.flip}>
-                        <Arrow size={16} />
-                      </span>
-                      <span>
-                        <em>Anterior</em>
-                        {prev.name}
-                      </span>
-                    </button>
-                  )}
-                  {next && (
-                    <button className={s.panelNext} onClick={() => store.set({ openStop: next.id })}>
-                      <span>
-                        <em>Siguiente parada</em>
-                        {next.name}
-                      </span>
-                      <Arrow size={16} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-      {/* "more below" hint, pinned to the panel bottom; fades on first scroll */}
-      <div className={s.scrollHint} ref={hint} style={{ visibility: 'hidden' }} aria-hidden="true">
-        <span className={s.scrollHintPill}>
-          Desliza para ver más
-          <svg width="12" height="14" viewBox="0 0 12 14" className={s.scrollHintArrow}>
-            <path d="M6 1v11M1.5 7.5 6 12l4.5-4.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </span>
-      </div>
-    </aside>
-    </>
   )
 }
 
@@ -792,7 +610,10 @@ function StampsModal() {
         <button className={s.modalClose} aria-label="Cerrar" onClick={() => store.set({ stampsOpen: false })}>
           <Close />
         </button>
-        <span className={s.modalKicker}>Pasaporte cafetero</span>
+        <span className={s.modalKicker}>
+          <Mark size={14} />
+          Pasaporte viajero
+        </span>
         <h2 className={s.modalTitle}>
           {all ? (
             <>
@@ -806,7 +627,7 @@ function StampsModal() {
         </h2>
         <p className={s.modalLead}>
           {all
-            ? 'Recorriste las seis paradas: ya conoces todo lo que hay detrás de tu taza.'
+            ? 'Recorriste las ocho paradas: de la Amazonía al Titicaca, el Perú ya es parte de tu historia.'
             : `Visita cada parada para ganar su sello. Llevas ${collected.length} de ${MAIN_STOPS.length}.`}
         </p>
         <div className={s.stamps}>
@@ -822,7 +643,7 @@ function StampsModal() {
                 }}
               >
                 <Stamp stop={stop} collected={got} size={112} />
-                <span>{stop.stage}</span>
+                <span>{stop.name}</span>
               </button>
             )
           })}

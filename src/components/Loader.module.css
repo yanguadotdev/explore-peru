@@ -31,6 +31,10 @@
   align-items: center;
 }
 
+.flag {
+  margin-bottom: 14px;
+}
+
 .counter {
   font-family: var(--num);
   font-weight: 800;
@@ -127,9 +131,7 @@
 }
 
 .beanCrease {
-  fill: none;
-  stroke: var(--paper-3);
-  stroke-width: 1.6;
+  fill: var(--paper-3);
 }
 
 .fact {

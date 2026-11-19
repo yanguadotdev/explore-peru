@@ -71,8 +71,9 @@ export type HeroImage = {
 }
 
 export const HERO_IMAGES = {
+  // push into the citadel below Huayna Picchu
+  machu: { src: 'machu-picchu.jpg', focus: [0.46, 0.36] },
   route: { src: 'route.jpg', focus: [0.512, 0.42] },
-  mountain: { src: 'mountain.jpg', focus: [0.72, 0.38] },
 } satisfies Record<string, HeroImage>
 
 export class PhotoHero {
@@ -108,10 +109,10 @@ export class PhotoHero {
     window.addEventListener('pointermove', this.onPointer)
   }
 
-  /** Resolves once the image is uploaded, so the loader can wait for it. */
+  /** Resolves (true) once the image is uploaded, false if it could not load. */
   load() {
     const src = `${import.meta.env.BASE_URL}${this.image.src}`
-    return new Promise<void>((resolve) => {
+    return new Promise<boolean>((resolve) => {
       new THREE.TextureLoader().load(
         src,
         (tex) => {
@@ -121,10 +122,10 @@ export class PhotoHero {
           this.mat.uniforms.uTex.value = tex
           this.mat.uniforms.uTexAspect.value = tex.image.width / tex.image.height
           this.mat.uniforms.uReady.value = 1
-          resolve()
+          resolve(true)
         },
         undefined,
-        () => resolve(),
+        () => resolve(false),
       )
     })
   }

@@ -1,50 +1,59 @@
-# Ruta del Café — ALTURA Café de Origen
+# Explora Perú — KUNTUR Viajes por el Perú
 
-Experiencia interactiva en WebGL para una marca de café de especialidad **ficticia** (pieza de portfolio).
-Cuenta el viaje del grano en seis paradas, desde la finca a 2.100 msnm hasta la taza en el pueblo.
+Experiencia interactiva en WebGL para descubrir el Perú: sus 25 regiones (24 departamentos y el
+Callao), de la costa a la selva, cruzando los Andes. La marca **KUNTUR** es ficticia: es una pieza
+de portfolio pensada para que viajeros de otros países exploren el mapa y sus curiosidades.
 
-Montañas, terreno, vegetación, edificios, vehículos, ilustraciones y audio se generan por código
-(el audio con `scripts/gen-audio.mjs`).
+## Contenido
 
-Recursos externos en `public/` (tomados de la referencia, expedia.com/route66):
+- **25 regiones**, cada una con su capital, su zona (costa, sierra o selva), la altitud de la
+  capital, tres curiosidades y un imprescindible (`src/data/stops.ts`).
+- **Ruta con sellos** de 8 paradas, de norte a sur: Loreto → Amazonas → La Libertad → Lima → Ica →
+  Arequipa → Puno → Cusco. Cada parada visitada suma un sello al pasaporte viajero.
+- Datos curiosos del Perú en el loader.
 
-- `pattern-alt.png`: patrón topográfico del loader.
-- `fonts/`: Centra No2 (títulos y textos), Heldies (manuscrita), Barlow ExtraBold (cifras) y Krona One (etiquetas).
+## Secuencia
 
-> Centra No2 y Heldies son fuentes comerciales, y el patrón es un recurso de la web de referencia.
-> Antes de publicar el proyecto hay que comprar las licencias de las fuentes y reemplazar el patrón por
-> uno propio. Barlow y Krona One tienen licencia libre (OFL).
+1. **Loader**: velo de papel con el patrón topográfico, contador, ruta de Tumbes a Tacna y datos
+   "¿Sabías que?". Al terminar se lee "25 *Regiones* 3 *Mundos*" y el velo se quema desde el centro.
+2. **Hero**: foto de Machu Picchu en WebGL con zoom lento, parallax y un "empujón" al entrar. El
+   título "Explora Perú" se entrelaza con la línea de la ruta, y el botón pasa de píldora a círculo.
+3. **Transición**: la foto se quema y revela el diorama.
+4. **Mapa 3D**: el Perú como losa elevada sobre un mundo continuo (Pacífico y países vecinos), que se pierde en la bruma.
+   - Pacífico con aguas poco profundas y espuma en la orilla; países vecinos rotulados.
+   - Costa desértica (huarangos, cactus, oasis de Huacachina, líneas de Nazca), Andes con nieve
+     en las cumbres y altiplano, selva amazónica con ríos (Amazonas, Marañón, Ucayali, Urubamba,
+     Madre de Dios) y el lago Titicaca con las islas de los uros.
+   - Hitos en la ruta: Kuélap, Chan Chan, Lima, el Misti, Machu Picchu y casas palafito en Loreto.
+   - Departamentos dibujados sobre el relieve; el que tiene el cursor encima (o está abierto) se ilumina.
+   - Pines en las 25 regiones, lista de regiones, pasaporte de sellos y transporte a elegir
+     (combi, llama o tren andino).
+5. **Página de región** (clic en un pin, en la lista o en un sello): la cámara se acerca al pin,
+   un velo de papel se abre desde él con contador y ruta, y se quema revelando la página:
+   - Hero a pantalla completa con la foto de la región, título letra a letra, región anterior y
+     siguiente, y el sello de la ruta si corresponde.
+   - Al hacer scroll la foto se encoge como una postal, sube un titular gigante que
+     aparece palabra por palabra, y un relleno marrón con borde líquido de ruido (técnica de
+     IronHill, de Codegrid) inunda la pantalla; el titular se vuelve a escribir en crema entre
+     fotos flotando, y al cerrar la sección el crema sube con el mismo borde líquido.
+   - "Historias del camino": una tarjeta que crece a pantalla completa y se vuelve un slider con
+     las tres curiosidades; cada foto entra con el mismo borde líquido (WebGL).
+   - Desvíos a las regiones vecinas y una tarjeta hacia la siguiente región.
+   - "Volver al mapa" / "Explorar en 3D" pliega la página y regresa al diorama.
+
+La geografía está simplificada a mano: es un mapa ilustrado, no cartografía exacta.
 
 ## Stack
 
 | Capa | Tecnología |
 | --- | --- |
 | UI | React 19 + CSS Modules |
+| Rutas | React Router 7 (SPA) |
 | 3D | Three.js (shaders propios, `InstancedMesh`, sombras, render targets) |
-| Animación | GSAP (timelines + `CustomEase` propios: `alt.in`, `alt.out`, `alt.inOut`) |
-| Scroll | Lenis (panel de historia de cada parada) |
-| Audio | Howler.js |
+| Animación | GSAP (timelines + `CustomEase` propios) |
+| Scroll | Lenis (panel de cada región) |
+| Audio | Howler.js (sonidos sintetizados con `scripts/gen-audio.mjs`) |
 | Build | Vite |
-
-## Secuencia
-
-1. **Loader**: velo de papel con curvas de nivel procedurales (shader), contador, ruta SVG que se dibuja
-   con un grano de café viajando por ella, y datos "¿Sabías que?". Al terminar, el texto se transforma en
-   "De la *Montaña* a tu *Taza*" y el velo se **tuesta** desde el centro (quemado fbm con borde encendido).
-2. **Hero**: amanecer cafetero en 3D con crestas por capas y perspectiva aérea, niebla en los valles,
-   palmas de cera, aves y parallax de cámara. Título con revelado letra a letra, perfil de altitud
-   animado y CTA en forma de píldora que se convierte en círculo al pasar el cursor.
-3. **Transición**: la cámara entra en la niebla y el fotograma se quema hacia el diorama, que llega
-   desenfocado y se enfoca mientras la ruta se dibuja sola.
-4. **Mapa 3D (diorama)**: maqueta sobre papel con estratos de tierra a los lados, río animado, terrazas
-   de café siguiendo las curvas de nivel, cafetos con cerezas, bosque de niebla con viento, nubes con
-   sombra, humo de la tostaduría y un vehículo recorriendo la ruta. Tiene tilt-shift, viñeta y grano.
-   - Arrastrar con inercia y zoom con la rueda.
-   - Pines con hover: tarjeta ilustrada que sigue al pin.
-   - Clic en un pin: la cámara vuela a la parada, se abre el panel con la historia (Lenis) y se gana
-     un sello con animación.
-   - Pasaporte de sellos (X/6), lista de paradas, cambio de transporte (jeep, mula, chiva), sonido
-     y onboarding.
 
 ## Scripts
 
@@ -53,23 +62,59 @@ pnpm install
 pnpm dev        # http://localhost:5178
 pnpm build      # type-check + build de producción en dist/
 pnpm audio      # regenera los WAV de public/audio
+pnpm test:e2e   # tests de UI end-to-end (Playwright + Chrome)
+pnpm test:e2e:ui  # los mismos tests en el modo visual de Playwright
 ```
 
-Atajo de desarrollo: `http://localhost:5178/?map` salta directo al mapa (solo en `dev`).
+## Tests de UI (Playwright)
 
-## Estructura
+`e2e/` recorre el sitio real en Chrome (WebGL, GSAP, Lenis y React Router incluidos), como lo
+haría una persona, con su propio servidor de desarrollo en el puerto 5179. **Cualquier error de
+consola o excepción no capturada hace fallar el test** (`e2e/fixtures.ts`), así que fallos como
+una pantalla en blanco al salir de una página se detectan solos.
 
-```
-src/
-  App.tsx                 orquesta loader → hero → mapa
-  components/             Loader, Hero, MapUI (+ CSS modules), iconos, ilustraciones, sellos
-  data/stops.ts           paradas, desvíos, textos y datos curiosos
-  lib/                    store, eases GSAP, audio (Howler)
-  webgl/
-    Experience.ts         renderer, render targets y pase de composición (quemado, tilt-shift, grano)
-    LoaderOverlay.ts      velo topográfico del loader + disolución
-    HeroScene.ts          escena de montañas del hero
-    MapScene.ts           diorama, cámara con inercia, picking de pines
-    map/                  terreno, ruta y pines, vegetación y edificios, vehículos
-    shaders/chunks.ts     ruido, fbm, turbulencia y campo de quemado compartidos
-```
+Cubren: loader → hero → mapa; lista de regiones, pasaporte de sellos y cambio de transporte;
+rutas (enlace directo, región inexistente, atrás/adelante); en la página de región: cerrar con
+"Volver al mapa", Escape y "Explorar en 3D" (también desde el slider), scroll completo por todas
+las secciones, slider de historias (flechas, miniaturas y deslizar), región anterior/siguiente,
+desvíos, tarjeta de la siguiente región, pantalla de móvil, y las 25 regiones una tras otra con
+su foto cargada.
+
+Usan el Chrome instalado en el equipo (`channel: 'chrome'`). Si un test falla, el informe con
+captura, vídeo y traza queda en `e2e-report/` (`pnpm exec playwright show-report e2e-report`).
+
+## Rutas (SPA con React Router)
+
+| Ruta | Contenido |
+| --- | --- |
+| `/` | Loader → hero → mapa 3D |
+| `/regions/:regionId` | Página de la región sobre el mapa (p. ej. `/regions/cajamarca`) |
+
+La URL y la página abierta están sincronizadas: los pines, la lista de regiones, anterior/siguiente
+y "Volver al mapa" cambian la URL, y los botones atrás/adelante del navegador abren o cierran
+páginas. Un enlace directo a una región pasa por el loader y salta el hero. Una región que no
+existe redirige a `/`. Al publicar, el hosting debe servir `index.html` para cualquier ruta
+(fallback de SPA; `vite preview` ya lo hace).
+
+Atajo de desarrollo (solo en `dev`): añade `?map` para saltar el loader, p. ej.
+`http://localhost:5178/?map` o `http://localhost:5178/regions/cusco?map`.
+
+El fondo del hero se elige en `src/webgl/Experience.ts` (`HERO_BACKGROUND`). Si la foto no carga,
+se usa la escena 3D de montañas.
+
+## Recursos externos (`public/`)
+
+- `machu-picchu.jpg`: foto del hero.
+- `onboarding/`: fotos de [Unsplash](https://unsplash.com) (licencia Unsplash, uso libre):
+  - `vinicunca.jpg` — Montaña de Siete Colores, por Johnson Wang
+  - `huacachina.jpg` — Oasis de Huacachina, por Domenica Basantes
+  - `llama.jpg` — Llama en los Andes, por Sofia Guaico
+- `regions/<id>/`: fotos de [Unsplash](https://unsplash.com) (licencia Unsplash) para cada región:
+  `hero.jpg` y `s1`–`s3.jpg`. Los ids de origen están en `src/data/regionPhotos.ts`
+  (`https://unsplash.com/photos/<id>`).
+- `pattern-alt.png`: patrón topográfico del loader.
+- `fonts/`: Centra No2, Heldies, Barlow ExtraBold y Krona One.
+
+> Centra No2 y Heldies son fuentes comerciales, y el patrón y algunas fotos provienen de webs de
+> referencia. Antes de publicar el proyecto hay que comprar las licencias y usar imágenes propias o
+> con licencia. Barlow y Krona One son libres (OFL).

@@ -7,7 +7,7 @@ import { HERO_IMAGES, PhotoHero } from './PhotoHero'
  * Hero background: 'route' | 'mountain' use the photos in /public,
  * '3d' uses the procedural mountain scene (HeroScene).
  */
-const HERO_BACKGROUND: keyof typeof HERO_IMAGES | '3d' = 'route'
+const HERO_BACKGROUND: keyof typeof HERO_IMAGES | '3d' = 'machu'
 import { MapScene, type MapEvents } from './MapScene'
 import { BURN, FULLSCREEN_VERT, NOISE } from './shaders/chunks'
 
@@ -94,6 +94,8 @@ export class Experience {
   private hasSize = false
   private mode: 'hero' | 'transition' | 'map' = 'hero'
   onFrame: (() => void) | null = null
+  /** Skip rendering while a full-screen page covers the canvas. */
+  paused = false
 
   constructor(public canvas: HTMLCanvasElement, events: MapEvents) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' })
@@ -135,11 +137,16 @@ export class Experience {
 
   async init(progress: (p: number) => void) {
     // pin numbers are drawn into canvases: make sure their font is ready first
-    await Promise.all([
-      document.fonts.load('800 100px Barlow'),
-      document.fonts.load('900 100px "Centra No2"'),
-      this.hero instanceof PhotoHero ? this.hero.load() : null,
-    ]).catch(() => {})
+    const [, , photoOk] = await Promise.all([
+      document.fonts.load('800 100px Barlow').catch(() => null),
+      document.fonts.load('900 100px "Centra No2"').catch(() => null),
+      this.hero instanceof PhotoHero ? this.hero.load() : Promise.resolve(true),
+    ])
+    // missing hero photo → fall back to the procedural Andes scene
+    if (!photoOk) {
+      this.hero = new HeroScene()
+      this.hero.resize(window.innerWidth / Math.max(1, window.innerHeight))
+    }
     progress(0.05)
     const t0 = performance.now()
     await this.map.build((p) => progress(0.05 + p * 0.85))
@@ -207,6 +214,7 @@ export class Experience {
   private tick = (time: number) => {
     this.timer.update(time)
     if (!this.hasSize) return this.resize()
+    if (this.paused) return
     const dt = Math.min(this.timer.getDelta(), 1 / 20)
     const t = this.timer.getElapsed()
     this.post.uniforms.uTime.value = t

@@ -1,0 +1,1168 @@
+/* ------------------------------------------------------------------ shell */
+
+.root {
+  --brown: #7a4a2e;
+  --brown-2: #8a5636;
+  --cream: var(--paper);
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  overflow: hidden;
+  pointer-events: auto;
+  transform-origin: 50% 100%;
+  background: var(--cream);
+  color: var(--ink);
+}
+
+.page,
+.scroller {
+  position: absolute;
+  inset: 0;
+}
+
+.scroller {
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(58, 36, 24, 0.35) transparent;
+}
+
+/* patterned paper of the region loader (LoaderOverlay canvas), under its content */
+.veil {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------------------ loader */
+
+.loader {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  background: var(--paper);
+  display: grid;
+  place-items: center;
+}
+
+.loaderCenter {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  transform: translateY(-6vh);
+}
+
+/* 11-frame sprite atlas (public/van-atlas.webp, 4 x 3 frames) */
+.loaderVan {
+  width: clamp(150px, 16vw, 220px);
+  aspect-ratio: 1;
+  margin-bottom: -18px;
+  background: url('/van-atlas.webp') 0 0 / 400% 300% no-repeat;
+}
+
+.loaderCount {
+  font-family: var(--num);
+  font-weight: 800;
+  font-size: 46px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.loaderLabel {
+  font-family: var(--wide);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.loaderLabel :global(.script) {
+  font-size: 18px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--cherry);
+}
+
+.loaderRoute {
+  position: absolute;
+  z-index: 1;
+  bottom: 8vh;
+  left: 50%;
+  width: min(510px, 80vw);
+  height: auto;
+  aspect-ratio: 510 / 148;
+  transform: translateX(-50%);
+  overflow: visible;
+  color: var(--ink);
+}
+
+.routeBase,
+.routeLine {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.routeBase {
+  stroke-width: 1.5;
+  stroke-dasharray: 2 6;
+  opacity: 0.45;
+}
+
+.routeLine {
+  stroke-width: 2.5;
+}
+
+/* ------------------------------------------------------------------ header */
+
+.head {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 4;
+  height: 64px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 0 0 0 14px;
+  background: rgba(237, 227, 204, 0.98);
+  border-bottom: 1px solid rgba(58, 36, 24, 0.12);
+}
+
+.headLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.headThumb {
+  width: 44px;
+  height: 36px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.headName {
+  display: grid;
+  font-weight: 900;
+  font-size: 17px;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+.headName em {
+  font-style: normal;
+  font-family: var(--wide);
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  opacity: 0.6;
+  margin-bottom: 4px;
+}
+
+.headNav {
+  position: relative;
+  display: flex;
+  gap: clamp(28px, 6vw, 96px);
+  padding-top: 10px;
+}
+
+.headTrack {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  right: 4px;
+  height: 2px;
+  background: rgba(58, 36, 24, 0.18);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.headFill {
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+}
+
+.headLink {
+  position: relative;
+  font-family: var(--wide);
+  font-size: 8.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.55;
+  transition: opacity 0.3s;
+  padding-top: 6px;
+}
+
+.headLink i {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  margin-left: -4.5px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 2px solid rgba(58, 36, 24, 0.35);
+  transition: background 0.3s, border-color 0.3s;
+}
+
+.headLink:hover,
+.navOn {
+  opacity: 1;
+}
+
+.navOn i {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.headBack {
+  justify-self: end;
+  align-self: stretch;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 22px;
+  background: var(--accent);
+  font-family: var(--wide);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: background 0.3s;
+}
+
+.headBack:hover {
+  background: #f7c75f;
+}
+
+/* ------------------------------------------------------------------ stage */
+
+.stage {
+  position: relative;
+  /* 1 timeline unit = 1vh of scroll (timeline ≈ 4 units) */
+  height: 500vh;
+}
+
+.sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  contain: layout paint;
+}
+
+.creamHead {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 18px;
+  padding: 80px 24px 24px;
+  text-align: center;
+}
+
+.kicker {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--wide);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.kicker :global(.script) {
+  font-size: 22px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.kicker svg {
+  align-self: center;
+}
+
+.kickerLight {
+  color: var(--paper);
+}
+
+.giant {
+  margin: 0;
+  max-width: 15ch;
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: clamp(42px, 6.6vw, 118px);
+  line-height: 0.9;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: #4a3123;
+}
+
+.giantLight {
+  color: var(--paper);
+  position: relative;
+  z-index: 2;
+}
+
+/* hero */
+
+.hero {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  transform-origin: 50% 40%;
+  background: #2a1a12;
+  box-shadow: 0 40px 80px -30px rgba(42, 23, 14, 0.6);
+  will-change: transform;
+}
+
+.heroImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  will-change: transform;
+}
+
+.heroShade {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(20, 10, 4, 0.32), transparent 65%),
+    linear-gradient(to bottom, rgba(20, 10, 4, 0.35), transparent 30%, transparent 65%, rgba(20, 10, 4, 0.5));
+}
+
+.heroCenter {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  color: var(--paper);
+  text-align: center;
+  padding-top: 40px;
+}
+
+.heroKicker {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  margin-bottom: -0.6vw;
+}
+
+.heroKicker :global(.script) {
+  font-size: clamp(26px, 2.6vw, 40px);
+  line-height: 1;
+}
+
+.heroKicker small {
+  font-family: var(--wide);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.heroTitle {
+  margin: 0;
+  display: flex;
+  font-family: var(--display);
+  font-weight: 900;
+  line-height: 0.92;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  text-shadow: 0 10px 40px rgba(20, 10, 4, 0.35);
+  white-space: nowrap;
+}
+
+.charMask {
+  display: inline-block;
+  overflow: hidden;
+  padding: 0.04em 0 0.02em;
+}
+
+.charMask > span {
+  display: inline-block;
+  transform-origin: 0 100%;
+}
+
+.heroStamp {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  margin: -170px 0 0 calc(min(30vw, 380px));
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.25));
+}
+
+.heroStamp svg {
+  background: rgba(251, 247, 238, 0.92);
+  border-radius: 50%;
+}
+
+.heroUi {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.heroUi > * {
+  pointer-events: auto;
+}
+
+.side {
+  position: absolute;
+  top: 50%;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--paper);
+  text-align: left;
+  text-shadow:
+    0 1px 2px rgba(20, 10, 4, 0.6),
+    0 2px 16px rgba(20, 10, 4, 0.6);
+  transform: translateY(-50%);
+}
+
+.side > span:not(.sideBtn) {
+  display: grid;
+  font-weight: 800;
+  font-size: 14px;
+  text-transform: uppercase;
+}
+
+.side em {
+  font-style: normal;
+  font-family: var(--wide);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  opacity: 0.9;
+}
+
+.sideL {
+  left: clamp(28px, 4vw, 64px);
+}
+
+.sideR {
+  right: clamp(28px, 4vw, 64px);
+  text-align: right;
+}
+
+/* Route 66 style diamond: a rotated rounded square, icon kept upright */
+.sideBtn {
+  width: 38px;
+  height: 38px;
+  margin: 0 4px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  transform: rotate(45deg);
+  border: 2px solid var(--paper);
+  background: rgba(20, 10, 4, 0.38);
+  box-shadow: 0 6px 18px rgba(20, 10, 4, 0.3);
+  transition: background 0.35s var(--alt-out), color 0.35s, transform 0.35s var(--alt-out);
+}
+
+.side:hover .sideBtn {
+  background: var(--paper);
+  color: var(--ink);
+  transform: rotate(45deg) scale(1.08);
+}
+
+.sideBtn > * {
+  transform: rotate(-45deg);
+}
+
+.flip {
+  display: inline-flex;
+  transform: scaleX(-1);
+}
+
+.sideBtn > .flip {
+  transform: rotate(-45deg) scaleX(-1);
+}
+
+.cue {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  color: var(--accent);
+  font-family: var(--wide);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.cueArrows {
+  display: grid;
+  gap: 1px;
+}
+
+.cueArrows i {
+  width: 10px;
+  height: 6px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) scale(0.9);
+  animation: cue 1.6s infinite;
+}
+
+.cueArrows i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.cueArrows i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes cue {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+/* liquid brown fill (WebGL) + the content that appears on it */
+
+.liquid {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+
+.brown {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--brown);
+  /* own stacking layer, so the closing cream flood covers the photos too */
+  isolation: isolate;
+}
+
+.float {
+  position: absolute;
+  will-change: transform;
+  margin: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 5px solid var(--paper-3);
+  box-shadow: 0 24px 40px -18px rgba(20, 10, 4, 0.6);
+  z-index: 1;
+}
+
+.float img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.float0 {
+  left: 18vw;
+  top: 16vh;
+  width: 15vw;
+  aspect-ratio: 4 / 3;
+  z-index: 3;
+}
+
+.float1 {
+  right: 6vw;
+  top: 6vh;
+  width: 14vw;
+  aspect-ratio: 4 / 3;
+}
+
+.float2 {
+  left: 6vw;
+  top: 58vh;
+  width: 13vw;
+  aspect-ratio: 1;
+}
+
+.float3 {
+  right: 22vw;
+  top: 52vh;
+  width: 13vw;
+  aspect-ratio: 4 / 3;
+  z-index: 3;
+}
+
+.float4 {
+  right: 5vw;
+  top: 82vh;
+  width: 12vw;
+  aspect-ratio: 4 / 3;
+}
+
+/* ------------------------------------------------------------------ text reveals */
+
+.wordMask {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding-bottom: 0.06em;
+  margin-right: 0.24em;
+}
+
+.word {
+  display: inline-block;
+}
+
+/* ------------------------------------------------------------------ stories */
+
+.stories {
+  position: relative;
+  z-index: 1;
+  /* the heading rides in over the last half-screen of the cream flood (transparent
+     here, so the flood stays visible behind it) instead of after a blank screen */
+  margin-top: -50vh;
+}
+
+.storiesHead {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  padding: 2vh 24px 10vh;
+}
+
+.storiesScript {
+  font-size: 34px;
+  color: var(--cherry);
+}
+
+.storiesTitle {
+  margin: 4px 0 26px;
+  font-weight: 900;
+  font-size: clamp(54px, 9vw, 170px);
+  line-height: 0.86;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: #4a3123;
+}
+
+.storiesHead p {
+  max-width: 460px;
+  font-size: 15px;
+  line-height: 1.6;
+  opacity: 0.8;
+  margin: 0;
+}
+
+.grow {
+  position: relative;
+  height: 280vh;
+  background: var(--paper);
+}
+
+.growSticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  padding: 76px 14px 14px;
+  box-sizing: border-box;
+}
+
+.card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 22px;
+  background: #2a1a12;
+  will-change: clip-path, transform;
+}
+
+.cardZoom {
+  position: absolute;
+  inset: 0;
+}
+
+/* slider */
+
+.slider {
+  position: absolute;
+  inset: 0;
+  color: var(--paper);
+}
+
+.sliderGl {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: #2a1a12;
+}
+
+.slide {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.slideShade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 50%, rgba(20, 10, 4, 0.5), rgba(20, 10, 4, 0.15) 70%), linear-gradient(to top, rgba(20, 10, 4, 0.45), transparent 40%);
+}
+
+.slideText {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  text-align: center;
+  padding: 0 18%;
+}
+
+.slideText h3 {
+  margin: 16px 0 18px;
+  font-weight: 900;
+  font-size: clamp(36px, 5.4vw, 92px);
+  line-height: 0.9;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  max-width: 13ch;
+}
+
+.slideText p {
+  max-width: 460px;
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.slideBadge {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 64px;
+  background: var(--paper);
+  color: var(--ink);
+  clip-path: polygon(0 0, 100% 0, 100% 72%, 50% 100%, 0 72%);
+  font-family: var(--num);
+  font-size: 24px;
+  line-height: 1;
+  padding-bottom: 10px;
+  box-sizing: border-box;
+}
+
+.slideBadge em {
+  font-style: normal;
+  font-family: var(--wide);
+  font-size: 6.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.sliderUi {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.sliderUi > * {
+  pointer-events: auto;
+}
+
+.bars {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+
+.bars span {
+  position: relative;
+  width: 64px;
+  height: 3px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: rgba(251, 247, 238, 0.35);
+}
+
+.bars i {
+  position: absolute;
+  inset: 0;
+  background: var(--paper);
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+}
+
+/* infinite road of story thumbnails */
+.timeline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  height: 101px;
+  /* clip only sideways: the enlarged thumbnails may poke above and below the road */
+  overflow-x: clip;
+  overflow-y: visible;
+  touch-action: pan-y;
+}
+
+.timelineTrack {
+  position: absolute;
+  will-change: transform;
+  inset: 0;
+  left: 50%;
+  width: 100%;
+}
+
+.timelineRoad {
+  position: absolute;
+  top: 0;
+  height: 101px;
+  overflow: visible;
+}
+
+.timelineRoad path {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.timelineStep {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2.5px solid var(--accent);
+  background: #2a1a12;
+  transform: translate(-50%, -50%) scale(1);
+  transition:
+    transform 0.9s var(--alt-out),
+    box-shadow 0.4s;
+}
+
+.timelineStep img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.timelineStep:hover {
+  transform: translate(-50%, -50%) scale(1.15);
+}
+
+.timelineOn,
+.timelineOn:hover {
+  transform: translate(-50%, -50%) scale(1.71);
+  box-shadow: 0 6px 18px rgba(20, 10, 4, 0.45);
+}
+
+/* ------------------------------------------------------------------ detours */
+
+.detours {
+  background: var(--paper);
+  padding: 18vh 8vw 8vh;
+  display: grid;
+  gap: 14vh;
+}
+
+.detoursHead {
+  text-align: center;
+}
+
+.detoursHead :global(.script) {
+  font-size: 34px;
+  color: var(--cherry);
+}
+
+.detoursHead h2 {
+  margin: 0;
+  font-weight: 900;
+  font-size: clamp(40px, 5vw, 84px);
+  line-height: 0.9;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: #4a3123;
+}
+
+.detour {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6vw;
+  align-items: center;
+}
+
+.detourAlt .detourImg {
+  order: 2;
+}
+
+.detourImg {
+  aspect-ratio: 5 / 4;
+  border-radius: 22px;
+  overflow: hidden;
+}
+
+.detourImg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.detourText {
+  max-width: 440px;
+}
+
+.detourText :global(.script) {
+  display: block;
+  font-size: 28px;
+  color: var(--cherry);
+}
+
+.detourText h3 {
+  margin: 0 0 14px;
+  font-weight: 900;
+  font-size: clamp(34px, 3.4vw, 56px);
+  line-height: 0.92;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.detourText p {
+  margin: 0 0 12px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.detourMeta {
+  font-family: var(--wide);
+  font-size: 9px !important;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.pill {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 22px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 800;
+  font-size: 12px;
+  text-transform: uppercase;
+  transition: transform 0.35s var(--alt-out), background 0.3s;
+}
+
+.pill:hover {
+  transform: translateY(-2px);
+  background: var(--cherry);
+}
+
+/* ------------------------------------------------------------------ next */
+
+.next {
+  background: var(--paper);
+  display: grid;
+  justify-items: center;
+  gap: 26px;
+  padding: 10vh 6vw 10vh;
+  overflow: hidden;
+}
+
+.nextKicker {
+  font-family: var(--wide);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.nextKicker :global(.script) {
+  font-size: 30px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--cherry);
+}
+
+.nextCard {
+  position: relative;
+  width: min(1080px, 88vw);
+  aspect-ratio: 16 / 8;
+  border-radius: 22px;
+  overflow: hidden;
+  border: 8px solid var(--paper-3);
+  box-shadow: 0 40px 70px -30px rgba(42, 23, 14, 0.55);
+  color: var(--paper);
+}
+
+.nextCard img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 1.2s var(--alt-out);
+}
+
+.nextCard:hover img {
+  transform: scale(1.06);
+}
+
+.nextShade {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 10, 4, 0.3);
+}
+
+.nextName {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: clamp(48px, 9vw, 150px);
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  text-shadow: 0 10px 40px rgba(20, 10, 4, 0.35);
+}
+
+.nextCta {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--ink);
+  font-weight: 800;
+  font-size: 12px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.credits {
+  margin: 4vh 0 0;
+  font-size: 11px;
+  opacity: 0.55;
+  text-align: center;
+}
+
+/* ------------------------------------------------------------------ fab */
+
+.fab {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 18px 6px 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: var(--shadow);
+  font-family: var(--wide);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: transform 0.4s var(--alt-out);
+}
+
+.fab:hover {
+  transform: rotate(0deg) scale(1.05) !important;
+}
+
+.fab img {
+  width: 54px;
+  height: 40px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.fab strong {
+  font-family: var(--num);
+  font-size: 13px;
+}
+
+/* ------------------------------------------------------------------ small screens */
+
+@media (max-width: 860px) {
+  .headNav {
+    display: none;
+  }
+
+  .headBack span {
+    display: none;
+  }
+
+  .side > span:not(.sideBtn) {
+    display: none;
+  }
+
+  .sideL {
+    left: 14px;
+  }
+
+  .sideR {
+    right: 14px;
+  }
+
+  .heroStamp {
+    margin: -150px 0 0 20px;
+  }
+
+  .detour {
+    grid-template-columns: 1fr;
+  }
+
+  .detourAlt .detourImg {
+    order: 0;
+  }
+
+  .float0,
+  .float1,
+  .float2,
+  .float3,
+  .float4 {
+    width: 30vw;
+  }
+
+  .slideText {
+    padding: 0 24px;
+  }
+}

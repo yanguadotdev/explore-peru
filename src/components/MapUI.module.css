@@ -180,10 +180,19 @@
   top: calc(100% + 10px);
   right: 0;
   width: 340px;
+  /* 25 regions: scroll inside, bar hidden */
+  max-height: min(70vh, 560px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
   padding: 10px;
   background: var(--paper-3);
   border-radius: 18px;
   box-shadow: var(--shadow);
+}
+
+.list::-webkit-scrollbar {
+  display: none;
 }
 
 .list ol {
@@ -213,6 +222,11 @@
   font-size: 20px;
   color: var(--cherry);
   min-width: 28px;
+}
+
+.listNumOff {
+  color: var(--ink-soft);
+  text-align: center;
 }
 
 .listText {
@@ -262,22 +276,52 @@
   overflow: hidden;
 }
 
+/* photo bleeds to the card's top, bottom and left edges: always full height */
 .onboardThumb {
   position: relative;
   flex: none;
-  width: 76px;
-  height: 76px;
-  border-radius: 12px;
+  align-self: stretch;
+  width: 104px;
+  min-height: 96px;
+  margin: -12px 0 -12px -12px;
+  border-radius: 18px 0 0 18px;
   display: grid;
   place-items: center;
   color: var(--paper-3);
-  background:
-    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.18), transparent 60%),
-    linear-gradient(160deg, #4e7a46, #2f5a33);
+  background: #2f5a33;
   overflow: hidden;
 }
 
+.onboardPhoto {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transform: scale(1.12);
+  transition:
+    opacity 0.6s var(--alt-out),
+    transform 1.6s var(--alt-out);
+}
+
+.onboardPhotoOn {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* keep the progress bar legible over the photo */
+.onboardThumb::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 40%;
+  background: linear-gradient(to top, rgba(20, 12, 6, 0.55), transparent);
+  pointer-events: none;
+}
+
 .onboardBar {
+  z-index: 1;
   position: absolute;
   left: 8px;
   right: 8px;
@@ -609,8 +653,10 @@
 .hoverArt {
   display: block;
   width: 100%;
-  height: 112px;
+  height: 132px;
   border-radius: 10px;
+  object-fit: cover;
+  background: #2a1a12;
 }
 
 .hoverText {
@@ -661,302 +707,6 @@
   color: rgba(246, 239, 223, 0.65);
 }
 
-/* ---------------------------------------------------------------- stop panel */
-
-.panel {
-  position: absolute;
-  top: 76px;
-  right: 12px;
-  bottom: 12px;
-  width: min(480px, calc(100vw - 24px));
-  background: var(--paper-3);
-  border-radius: 22px;
-  box-shadow: 0 30px 80px -30px rgba(58, 36, 24, 0.6);
-  overflow: hidden;
-  /* the open/close choreography scales & tilts from the bottom-right corner */
-  transform-origin: 100% 100%;
-  will-change: transform;
-}
-
-/* thumbnail beside the tilted peek card (left of it, lower right of the screen) */
-.panelPeek {
-  position: absolute;
-  right: 222px;
-  bottom: 64px;
-  width: 172px;
-  height: 112px;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 3px solid var(--paper-3);
-  box-shadow: var(--shadow);
-  pointer-events: none !important;
-}
-
-.panelPeekArt {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-.panelScroll {
-  height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-  overscroll-behavior: contain;
-  /* scroll stays (wheel / touch / Lenis), the bar is hidden */
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.panelScroll::-webkit-scrollbar {
-  display: none;
-}
-
-/* pinned to the panel bottom: paper fade + pill with a bobbing arrow */
-.scrollHint {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 120px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 18px;
-  background: linear-gradient(to bottom, rgba(251, 247, 238, 0), var(--paper-3) 72%);
-  pointer-events: none;
-  z-index: 2;
-}
-
-.scrollHintPill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 14px;
-  border-radius: 999px;
-  background: var(--ink);
-  color: var(--paper-2);
-  font-family: var(--wide);
-  font-size: 9.5px;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  box-shadow: 0 8px 18px -10px rgba(58, 36, 24, 0.6);
-}
-
-.scrollHintArrow {
-  animation: hintBob 1.2s var(--alt-in-out) infinite;
-}
-
-@keyframes hintBob {
-  0%,
-  100% {
-    transform: translateY(-2px);
-  }
-  50% {
-    transform: translateY(3px);
-  }
-}
-
-.panelClose {
-  position: absolute;
-  z-index: 3;
-  top: 14px;
-  right: 14px;
-  width: 40px;
-  height: 40px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--paper-3);
-  box-shadow: 0 6px 16px -8px rgba(58, 36, 24, 0.5);
-  transition: transform 0.5s var(--alt-out);
-}
-
-.panelClose:hover {
-  transform: rotate(90deg);
-}
-
-.panelArtWrap {
-  position: relative;
-  padding: 12px 12px 0;
-}
-
-.panelArt {
-  display: block;
-  width: 100%;
-  height: 230px;
-  border-radius: 14px;
-}
-
-.panelStamp {
-  position: absolute;
-  right: 26px;
-  bottom: -46px;
-  filter: drop-shadow(0 6px 10px rgba(58, 36, 24, 0.18));
-  mix-blend-mode: multiply;
-}
-
-.panelBody {
-  padding: 22px 30px 36px;
-}
-
-.panelKicker {
-  display: block;
-  font-family: var(--wide);
-  font-size: 9.5px;
-  font-weight: 400;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--cherry);
-}
-
-.panelTitle {
-  margin: 8px 0 8px;
-  max-width: 78%;
-  font-family: var(--display);
-  font-weight: 900;
-  font-size: clamp(30px, 3vw, 40px);
-  line-height: 1;
-}
-
-.panelMeta {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.panelMeta span {
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: var(--paper);
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.panelMeta .panelGot {
-  background: var(--gold);
-}
-
-.panelLead {
-  margin: 20px 0 8px;
-  font-family: var(--display);
-  font-size: 21px;
-  line-height: 1.3;
-  font-weight: 500;
-}
-
-.panelSection {
-  position: relative;
-  padding: 22px 0 4px 44px;
-  border-top: 1px solid rgba(58, 36, 24, 0.12);
-  margin-top: 18px;
-}
-
-.panelSecNum {
-  position: absolute;
-  left: 0;
-  top: 24px;
-  font-family: var(--num);
-  font-weight: 800;
-  color: var(--cherry);
-}
-
-.panelSection h3 {
-  margin: 0 0 8px;
-  font-family: var(--display);
-  font-weight: 800;
-  font-size: 20px;
-}
-
-.panelSection p {
-  margin: 0;
-  font-size: 15px;
-  line-height: 1.6;
-  color: var(--ink-2);
-}
-
-.panelNote {
-  display: flex;
-  gap: 14px;
-  align-items: center;
-  margin-top: 28px;
-  padding: 16px 18px;
-  border-radius: 16px;
-  background: var(--ink);
-  color: var(--paper-2);
-}
-
-.panelNote span {
-  display: block;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--gold);
-}
-
-.panelNote strong {
-  font-family: var(--display);
-  font-size: 17px;
-}
-
-.panelNav {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-top: 26px;
-}
-
-.panelNav button {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px;
-  border-radius: 14px;
-  border: 1.5px solid rgba(58, 36, 24, 0.15);
-  text-align: left;
-  font-size: 13px;
-  font-weight: 700;
-  transition:
-    background 0.3s,
-    border-color 0.3s;
-}
-
-.panelNav button:hover {
-  background: var(--paper);
-  border-color: transparent;
-}
-
-.panelNav em {
-  display: block;
-  font-style: normal;
-  font-size: 10px;
-  font-weight: 800;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-}
-
-.panelNext {
-  grid-column: 2;
-  justify-content: space-between;
-  background: var(--cherry);
-  color: var(--paper-3);
-  border-color: transparent !important;
-}
-
-.panelNext em {
-  color: rgba(251, 247, 238, 0.75);
-}
-
-.panelNav .panelNext:hover {
-  background: var(--cherry-dark);
-}
-
-.flip {
-  transform: scaleX(-1);
-  display: inline-flex;
-}
-
 /* ---------------------------------------------------------------- stamps modal */
 
 .modal {
@@ -995,6 +745,9 @@
 }
 
 .modalKicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-family: var(--wide);
   font-size: 10px;
   font-weight: 400;
@@ -1076,11 +829,6 @@
   }
   .toggleLabel {
     font-size: 16px;
-  }
-  .panel {
-    top: auto;
-    height: 72vh;
-    left: 12px;
   }
   .stamps {
     grid-template-columns: repeat(2, 1fr);
