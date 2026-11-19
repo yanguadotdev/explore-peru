@@ -1,3 +1,4 @@
+import { Analytics } from '@vercel/analytics/react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import './styles/global.css'
@@ -21,5 +22,8 @@ createRoot(document.getElementById('root')!).render(
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
+    {/* Vercel Web Analytics (page views follow the router). Left out of the e2e build,
+        where /_vercel/insights does not exist and would log a console error. */}
+    {import.meta.env.VITE_E2E !== '1' && <Analytics />}
   </BrowserRouter>,
 )
